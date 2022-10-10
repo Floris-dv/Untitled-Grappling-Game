@@ -1,0 +1,10 @@
+[submodule "LearnOpenGL/Vendor/spdlog"]
+	path = LearnOpenGL/Vendor/spdlog
+	url = ../../gabime/spdlog.git
+[submodule "LearnOpenGL/Vendor/imgui"]
+	path = LearnOpenGL/Vendor/imgui
+	url = https://github.com/ocornut/imgui.git
+	branch = docking
+[submodule "LearnOpenGL/Vendor/glm"]
+	path = LearnOpenGL/Vendor/glm
+	url = https://github.com/g-truc/glm.git
