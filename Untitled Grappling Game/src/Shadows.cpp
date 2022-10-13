@@ -10,11 +10,11 @@ namespace Shadows {
 #if ENABLE_SHADOWS
 	namespace Shaders {
 		void Setup() {
-			dirLight = new Shader("Shaders/Shadow.vert", "Shaders/Shadow.frag");
-			iDirLight = new Shader("Shaders/InstancedDirShadow.vert", "Shaders/Shadow.frag");
+			dirLight = new Shader("src/Shaders/Shadow.vert", "src/Shaders/Shadow.frag");
+			iDirLight = new Shader("src/Shaders/InstancedDirShadow.vert", "src/Shaders/Shadow.frag");
 
-			pointLight = new Shader("Shaders/PointLightShadow.vert", "Shaders/PointLightShadow.frag", "Shaders/PointLightShadow.geom");
-			iPointLight = new Shader("Shaders/InstancedPointShadows.vert", "Shaders/PointLightShadow.frag", "Shaders/PointLightShadow.geom");
+			pointLight = new Shader("src/Shaders/PointLightShadow.vert", "src/Shaders/PointLightShadow.frag", "Shaders/PointLightShadow.geom");
+			iPointLight = new Shader("src/Shaders/InstancedPointShadows.vert", "src/Shaders/PointLightShadow.frag", "Shaders/PointLightShadow.geom");
 		}
 
 		void Delete() {

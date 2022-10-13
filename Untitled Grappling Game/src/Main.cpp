@@ -136,18 +136,18 @@ int main() {
 
 	Model rock("resources/rock/rock.obj", true, false);
 	Model backpack("resources/backpack/backpack.obj", true, false);
-	Model saber("resources/saber/lightsaber.fbx");
+	// Model saber("resources/saber/lightsaber.fbx");
 
 	std::vector<std::shared_future<LoadingTexture*>> floorTextures = {
-		StartLoadingTexture("Textures/FloorDiffuse.jpg", TextureType::diffuse),
+		StartLoadingTexture("resources/Textures/FloorDiffuse.jpg", TextureType::diffuse),
 
-		StartLoadingTexture("Textures/FloorSpecular.png", TextureType::specular),
-		StartLoadingTexture("Textures/FloorNormal.jpg", TextureType::normal),
+		StartLoadingTexture("resources/Textures/FloorSpecular.png", TextureType::specular),
+		StartLoadingTexture("resources/Textures/FloorNormal.jpg", TextureType::normal),
 
-		StartLoadingTexture("Textures/FloorDisplacement.jpg", TextureType::height)
+		StartLoadingTexture("resources/Textures/FloorDisplacement.jpg", TextureType::height)
 	};
 
-	std::vector<std::shared_future<LoadingTexture*>> bluePrintTexture{ StartLoadingTexture("Textures/Blueprint.jpg", TextureType::diffuse) };
+	std::vector<std::shared_future<LoadingTexture*>> bluePrintTexture{ StartLoadingTexture("resources/Textures/Blueprint.jpg", TextureType::diffuse) };
 
 #if QUICK_LOADING
 	Setup();
@@ -180,7 +180,7 @@ int main() {
 
 		{
 			Timer t("Cube Map");
-			skyBoxTex = loadCubeMap(faces, "Textures/Skybox");
+			skyBoxTex = loadCubeMap(faces, "resources/Textures/Skybox");
 		}
 	}
 
@@ -199,25 +199,25 @@ int main() {
 		floorVAO.AddBuffer(floorVBO, floorBL);
 	}
 
-	// Set up the shaders:
-	Shader shader("Shaders/Backpack.vert", "Shaders/Backpack.frag");
-	Shader asteroidShader("Shaders/Asteroids.vert", "Shaders/Backpack.frag");
-	Shader lightShader("Shaders/Light.vert", "Shaders/Light.frag");
-	Shader skyBoxShader("Shaders/Skybox.vert", "Shaders/Skybox.frag");
-	Shader normalShader("Shaders/ShowNormals.vert", "Shaders/Light.frag", "Shaders/ShowNormals.geom");
-	Shader instancedNormalShading("Shaders/InstancedNormalShowing.vert", "Shaders/Light.frag", "Shaders/ShowNormals.geom");
-	Shader postProcessingShader("Shaders/Framebuffer.vert", "Shaders/PostProcessing.frag");
-	Shader blurShader("Shaders/Framebuffer.vert", "Shaders/Blur.frag");
-	Shader geomPassShader("Shaders/GBuffer.vert", "Shaders/GBuffer.frag");
-	Shader instancedGeomPassShader("Shaders/InstancedGBuffer.vert", "Shaders/GBuffer.frag");
+	// Set up the Shaders:
+	Shader shader("src/Shaders/Backpack.vert", "src/Shaders/Backpack.frag");
+	Shader asteroidShader("src/Shaders/Asteroids.vert", "src/Shaders/Backpack.frag");
+	Shader lightShader("src/Shaders/Light.vert", "src/Shaders/Light.frag");
+	Shader skyBoxShader("src/Shaders/Skybox.vert", "src/Shaders/Skybox.frag");
+	Shader normalShader("src/Shaders/ShowNormals.vert", "src/Shaders/Light.frag", "src/Shaders/ShowNormals.geom");
+	Shader instancedNormalShading("src/Shaders/InstancedNormalShowing.vert", "src/Shaders/Light.frag", "src/Shaders/ShowNormals.geom");
+	Shader postProcessingShader("src/Shaders/Framebuffer.vert", "src/Shaders/PostProcessing.frag");
+	Shader blurShader("src/Shaders/Framebuffer.vert", "src/Shaders/Blur.frag");
+	Shader geomPassShader("src/Shaders/GBuffer.vert", "src/Shaders/GBuffer.frag");
+	Shader instancedGeomPassShader("src/Shaders/InstancedGBuffer.vert", "src/Shaders/GBuffer.frag");
 
-	Shader lightPassShader("Shaders/FrameBuffer.vert", "Shaders/LightPass.frag");
-	Shader pointLightPassShader("Shaders/Light.vert", "Shaders/PointlightPass.frag");
-	Shader bloomPassShader("Shaders/Framebuffer.vert", "Shaders/Bloompass.frag");
+	Shader lightPassShader("src/Shaders/FrameBuffer.vert", "src/Shaders/LightPass.frag");
+	Shader pointLightPassShader("src/Shaders/Light.vert", "src/Shaders/PointlightPass.frag");
+	Shader bloomPassShader("src/Shaders/Framebuffer.vert", "src/Shaders/Bloompass.frag");
 
-	Shader bloomShader("Shaders/Bloom.comp");
+	Shader bloomShader("src/Shaders/Bloom.comp");
 
-	Shader textureShader("Shaders/Texture.vert", "Shaders/Texture.frag");
+	Shader textureShader("src/Shaders/Texture.vert", "src/Shaders/Texture.frag");
 
 	Material blueprintMaterial(&textureShader, std::move(bluePrintTexture));
 
@@ -466,7 +466,7 @@ int main() {
 
 	pointLightPassShader.Use();
 	pointLightPassShader.SetVec2("screenSize", (float)Window::Get().GetWidth(), (float)Window::Get().GetHeight());
-	saber.DoOpenGL();
+	// saber.DoOpenGL();
 	while (!Window::Get().ShouldClose())
 	{
 		StartFrame();
@@ -719,7 +719,7 @@ int main() {
 		shader.SetMat4("model", t.getModelMatrix());
 		shader.SetVec3("viewPos", Camera::Get().m_Position);
 		glm::mat4 MVP = VP;
-		saber.Draw(shader, Camera::Get().GetFrustum(), t);
+		// saber.Draw(shader, Camera::Get().GetFrustum(), t);
 
 #if ENABLE_BLOOM
 		if (bloomToggled)
