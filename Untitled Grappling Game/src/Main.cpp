@@ -136,7 +136,7 @@ int main() {
 
 	Model rock("resources/rock/rock.obj", true, false);
 	Model backpack("resources/backpack/backpack.obj", true, false);
-	// Model saber("resources/saber/lightsaber.fbx");
+	Model saber("resources/saber/lightsaber.fbx");
 
 	std::vector<std::shared_future<LoadingTexture*>> floorTextures = {
 		StartLoadingTexture("resources/Textures/FloorDiffuse.jpg", TextureType::diffuse),

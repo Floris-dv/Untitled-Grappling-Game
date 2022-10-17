@@ -215,7 +215,8 @@ void Model::LoadModel(const std::string& path)
 	unsigned int pFlags = 0;
 	pFlags |= aiProcess_SortByPType | aiProcess_FlipUVs | aiProcess_PreTransformVertices | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_Triangulate | aiProcess_GenUVCoords; // Needed for rendering
 	pFlags |= aiProcess_GenBoundingBoxes; // let assimp make the AABB automatically
-	pFlags |= aiProcess_JoinIdenticalVertices | aiProcess_ImproveCacheLocality | aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes | aiProcess_JoinIdenticalVertices | aiProcess_RemoveRedundantMaterials; // Optimisations to do now while on a different thread
+	// aiProcess_OptimizeGraph is incompatible with aiProcess_PreTransformVertices
+	pFlags |= aiProcess_JoinIdenticalVertices | aiProcess_ImproveCacheLocality | aiProcess_OptimizeMeshes | aiProcess_JoinIdenticalVertices | aiProcess_RemoveRedundantMaterials; // Optimisations to do now while on a different thread
 #if _DEBUG
 	pFlags |= aiProcess_ValidateDataStructure;
 #endif

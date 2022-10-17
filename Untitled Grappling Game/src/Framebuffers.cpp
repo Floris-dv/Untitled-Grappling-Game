@@ -134,7 +134,7 @@ namespace Framebuffers {
 		CreateTexturesRBs();
 
 		// set up the shader
-		PostProcessingShader = new Shader("Shaders/FrameBuffer.vert", "Shaders/PostProcessing.frag");
+		PostProcessingShader = new Shader("src/Shaders/FrameBuffer.vert", "src/Shaders/PostProcessing.frag");
 
 		PostProcessingShader->Use();
 
