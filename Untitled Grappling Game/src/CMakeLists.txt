@@ -1,7 +1,5 @@
 CMAKE_MINIMUM_REQUIRED( VERSION 3.16 )
 
-message(STATUS "using ${CPP_FILES}")
-
 add_executable(App OBJECT
     AABB.cpp
     Camera.cpp
