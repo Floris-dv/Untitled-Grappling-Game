@@ -721,6 +721,13 @@ int main() {
 		glm::mat4 MVP = VP;
 		// saber.Draw(shader, Camera::Get().GetFrustum(), t);
 
+		float depth;
+		// After everything:
+		if (1)//Window::Get().GetMouseButtonDown(0))
+			glReadPixels(Window::Get().GetWidth() / 2, Window::Get().GetHeight() / 2, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+
+		ImGui::Text("Depth: %f", depth);
+
 #if ENABLE_BLOOM
 		if (bloomToggled)
 		{
@@ -810,7 +817,8 @@ int main() {
 
 		// renderer.Finalize();
 
-		ImGui::DragFloat3("Front:", (float*)&Camera::Get().m_Front, 0.0f, -1.0f, 1.0f);
+		glm::vec3& front = Camera::Get().m_Front;
+		ImGui::Text("Front: %f %f %f", front.x, front.y, front.z);
 
 		Framebuffers::Draw(exposure, Framebuffers::mainTex, bloomRTs[2]);
 		EndFrame();

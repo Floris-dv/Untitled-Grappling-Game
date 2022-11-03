@@ -115,11 +115,6 @@
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\DataBuffers.cpp" />
     <ClCompile Include="src\Framebuffers.cpp" />
-    <ClCompile Include="src\ImGuiBuild.cpp" />
-    <ClCompile Include="vendor\glad.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="src\Log.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\MarchingCubes.cpp" />
@@ -136,6 +131,8 @@
     <ClCompile Include="src\Shadows.cpp" />
     <ClCompile Include="src\Texture.cpp" />
     <ClCompile Include="src\Window.cpp" />
+    <ClCompile Include="vendor\Vendor.cpp" />
+    <ClCompile Include="vendor\ImGuiBuild.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\Shaders\Bloom.comp" />

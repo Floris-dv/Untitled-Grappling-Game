@@ -26,11 +26,14 @@ add_subdirectory(${VENDOR})
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Untitled Grappling Game/src")
 
-add_executable(
-	$<TARGET_OBJECTS:MainSrc>
-	$<TARGET_OBJECTS:Vendor>
-	$<TARGET_OBJECTS:ImGui>
+add_executable(App)
 
-)
+target_sources(App PRIVATE ${SOURCE_FILES} ${Vendor}/ImGuiBuild.cpp ${Vendor}/Vendor.cpp)
+
+target_precompile_headers(App PRIVATE pch.h)
+
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT App)
 
 target_link_libraries(App assimp glfw glm)
+
+file(COPY "Untitled Grappling Game/resources" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
