@@ -17,6 +17,11 @@ public:
 	// constructor reads and builds the shader
 	Shader(std::string_view vertexPath, std::string_view fragmentPath, std::string_view geometryPath = "");
 
+	template<size_t vSize, size_t fSize>
+	Shader(const uint32_t vertex[vSize], const uint32_t fragment[fSize]) : Shader(vertex, vSize, fragment, fSize) {}
+
+	Shader(const uint32_t* vertex, size_t vSize, const uint32_t* fragment, size_t fSize);
+
 	Shader(std::string_view computePath);
 
 	~Shader() {

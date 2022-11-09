@@ -1,9 +1,9 @@
 #version 460 core
 layout (location = 0) in vec3 aPos;
 
-out vec3 texCoords;
+layout (location = 0) out vec3 texCoords;
 
-uniform mat4 ProjunTranslatedView;
+layout (location = 1) uniform mat4 ProjunTranslatedView;
 
 void main() {
 	texCoords = aPos;

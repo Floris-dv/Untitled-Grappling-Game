@@ -3,8 +3,8 @@
 layout (location = 0) out vec4 FragColor;
 layout (location = 1) out vec4 BrightColor;
 
-in vec2 texCoords;
-uniform sampler2D screen;
+layout (location = 0) in vec2 texCoords;
+layout (binding = 0) uniform sampler2D screen;
 
 void main() {
 	FragColor = texture(screen, texCoords);

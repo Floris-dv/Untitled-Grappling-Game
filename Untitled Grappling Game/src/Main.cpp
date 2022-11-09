@@ -25,10 +25,10 @@
 #include "Timer.h"
 #include "Settings.h"
 #include "Setup.h"
-#include "Shadows.h"
 #include "Object.h"
 #include "Log.h"
 #include "Window.h"
+#include "Level.h"
 
 #include "Framebuffers.h"
 
@@ -147,7 +147,7 @@ int main() {
 		StartLoadingTexture("resources/Textures/FloorDisplacement.jpg", TextureType::height)
 	};
 
-	std::vector<std::shared_future<LoadingTexture*>> bluePrintTexture{ StartLoadingTexture("resources/Textures/Blueprint.jpg", TextureType::diffuse) };
+	std::vector<std::shared_future<LoadingTexture*>> loadingBluePrintTexture{ StartLoadingTexture("resources/Textures/Blueprint.jpg", TextureType::diffuse) };
 
 #if QUICK_LOADING
 	Setup();
@@ -161,11 +161,6 @@ int main() {
 	  glm::vec3(-1.3f,  0.4f,  2.0f),
 	  glm::vec3(0.0f,  0.0f, -3.0f)
 	};
-
-	BufferLayout boxLayout;
-	boxLayout.Push<float>(3); // position
-	boxLayout.Push<float>(3); // normal
-	boxLayout.Push<float>(2); // texCoords
 
 	unsigned int skyBoxTex;
 	{
@@ -199,31 +194,28 @@ int main() {
 		floorVAO.AddBuffer(floorVBO, floorBL);
 	}
 
+	// This would be WAY better with #embed
 	// Set up the Shaders:
-	Shader shader("src/Shaders/Backpack.vert", "src/Shaders/Backpack.frag");
-	Shader asteroidShader("src/Shaders/Asteroids.vert", "src/Shaders/Backpack.frag");
-	Shader lightShader("src/Shaders/Light.vert", "src/Shaders/Light.frag");
-	Shader skyBoxShader("src/Shaders/Skybox.vert", "src/Shaders/Skybox.frag");
-	Shader normalShader("src/Shaders/ShowNormals.vert", "src/Shaders/Light.frag", "src/Shaders/ShowNormals.geom");
-	Shader instancedNormalShading("src/Shaders/InstancedNormalShowing.vert", "src/Shaders/Light.frag", "src/Shaders/ShowNormals.geom");
+	Shader shader("src/Shaders/NoInstance.vert", "src/Shaders/MainFrag.frag");
+	Shader asteroidShader("src/Shaders/Instanced.vert", "src/Shaders/MainFrag.frag");
+	Shader lightShader("src/Shaders/LightVert.vert", "src/Shaders/LightFrag.frag");
+	Shader skyBoxShader("src/Shaders/SkyboxVert.vert", "src/Shaders/SkyboxFrag.frag");;
 	Shader postProcessingShader("src/Shaders/Framebuffer.vert", "src/Shaders/PostProcessing.frag");
 	Shader blurShader("src/Shaders/Framebuffer.vert", "src/Shaders/Blur.frag");
-	Shader geomPassShader("src/Shaders/GBuffer.vert", "src/Shaders/GBuffer.frag");
-	Shader instancedGeomPassShader("src/Shaders/InstancedGBuffer.vert", "src/Shaders/GBuffer.frag");
-
-	Shader lightPassShader("src/Shaders/FrameBuffer.vert", "src/Shaders/LightPass.frag");
-	Shader pointLightPassShader("src/Shaders/Light.vert", "src/Shaders/PointlightPass.frag");
 	Shader bloomPassShader("src/Shaders/Framebuffer.vert", "src/Shaders/Bloompass.frag");
 
 	Shader bloomShader("src/Shaders/Bloom.comp");
 
-	Shader textureShader("src/Shaders/Texture.vert", "src/Shaders/Texture.frag");
+	Shader textureShader("src/Shaders/TextureVert.vert", "src/Shaders/TextureFrag.frag");
 
-	Material blueprintMaterial(&textureShader, std::move(bluePrintTexture));
+	std::vector<Texture> bluePrintTexture = { loadingBluePrintTexture[0].get()->Finish() };
+
+	Material blueprintMaterial(&textureShader, bluePrintTexture);
 
 	blueprintMaterial.LoadTextures(true);
 
 	Object<SimpleVertex> blueprintBox(&blueprintMaterial, boxVertices, SimpleVertex::Layout);
+
 
 	Material lightMaterial(&lightShader, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f });
 
@@ -245,14 +237,12 @@ int main() {
 
 	// uniform buffer(s):
 	// Matrices uniform block is at binding point 0:
-	UniformBuffer viewProjUBO(sizeof(glm::mat4), "Matrices");
+	UniformBuffer matrixUBO(sizeof(glm::mat4) + sizeof(glm::vec3), "Matrices");
 	{
-		viewProjUBO.SetBlock(shader);
-		viewProjUBO.SetBlock(asteroidShader);
-		viewProjUBO.SetBlock(lightShader);
-		viewProjUBO.SetBlock(geomPassShader);
-		viewProjUBO.SetBlock(instancedGeomPassShader);
-		viewProjUBO.SetBlock(textureShader);
+		matrixUBO.SetBlock(shader);
+		matrixUBO.SetBlock(asteroidShader);
+		matrixUBO.SetBlock(lightShader);
+		matrixUBO.SetBlock(textureShader);
 	}
 
 	glm::vec3 lightDir(0.0f, 3.0f, 4.0f);
@@ -262,7 +252,6 @@ int main() {
 	{
 		lightsUBO.SetBlock(shader);
 		lightsUBO.SetBlock(asteroidShader);
-		lightsUBO.SetBlock(lightPassShader);
 		lightsUBO.SetBlock(textureShader);
 	}
 
@@ -279,14 +268,6 @@ int main() {
 
 	// set shader uniforms
 	{
-		normalShader.Use();
-		normalShader.SetFloat("Magnitude", normalMagnitude);
-		normalShader.SetVec3("lightColor", 1.0f, 1.0f, 0.0f);
-
-		instancedNormalShading.Use();
-		instancedNormalShading.SetFloat("Magnitude", normalMagnitude);
-		instancedNormalShading.SetVec3("lightColor", 1.0f, 1.0f, 0.0f);
-
 		lightShader.Use();
 		lightShader.SetVec3("lightColor", 1.0f, 1.0f, 1.0f);
 
@@ -294,47 +275,13 @@ int main() {
 		shader.SetFloat("material.shininess", 256.0f);
 		shader.SetFloat("spotLight.cutOff", 0.9762960071199334f);
 		shader.SetFloat("spotLight.outerCutOff", 0.9659258262890683f);
-		shader.SetInt("shadowMapDir", 14);
-		shader.SetInt("shadowMapPoint", 15);
 		shader.SetFloat("far_plane", far_plane);
 
 		asteroidShader.Use();
 		asteroidShader.SetFloat("material.shininess", 256.0f);
 		asteroidShader.SetFloat("spotLight.cutOff", 0.9762960071199334f);
 		asteroidShader.SetFloat("spotLight.outerCutOff", 0.9659258262890683f);
-		asteroidShader.SetInt("shadowMapDir", 14);
-		asteroidShader.SetInt("shadowMapPoint", 15);
 		asteroidShader.SetFloat("far_plane", far_plane);
-
-		lightPassShader.Use();
-		lightPassShader.SetInt("gPosition", 0);
-		lightPassShader.SetInt("gNormal", 1);
-		lightPassShader.SetInt("gAlbedoSpec", 2);
-		lightPassShader.SetFloat("spotLight.cutOff", 0.9762960071199334f);
-		lightPassShader.SetFloat("spotLight.outerCutOff", 0.9659258262890683f);
-		lightPassShader.SetFloat("shininess", 32.0f);
-		lightPassShader.SetInt("shadowMapDir", 14);
-
-		pointLightPassShader.Use();
-		pointLightPassShader.SetInt("gPosition", 0);
-		pointLightPassShader.SetInt("gNormal", 1);
-		pointLightPassShader.SetInt("gAlbedoSpec", 2);
-		pointLightPassShader.SetInt("addTo", 3);
-		pointLightPassShader.SetFloat("shininess", 32.0f);
-		pointLightPassShader.SetVec3("light.ambient", 0.05f, 0.05f, 0.05f);
-		pointLightPassShader.SetVec3("light.diffuse", 1.0f, 1.0f, 1.0f);
-		pointLightPassShader.SetVec3("light.specular", 0.1f, 0.1f, 0.1f);
-		pointLightPassShader.SetFloat("light.linear", 0.09f);
-		pointLightPassShader.SetFloat("light.quadratic", 0.032f);
-		pointLightPassShader.SetFloat("far_plane", far_plane);
-		pointLightPassShader.SetInt("shadowMapPoint", 15);
-
-		instancedGeomPassShader.Use();
-		instancedGeomPassShader.SetFloat("height_scale", 0.1f);
-
-		geomPassShader.Use();
-		geomPassShader.SetFloat("height_scale", 0.1f);
-		geomPassShader.SetFloat("material.shininess", 256.0f);
 
 		bloomPassShader.Use();
 		bloomPassShader.SetInt("screen", 0);
@@ -403,6 +350,18 @@ int main() {
 	Object<Vertex> floor(&m, floorVertices, Vertex::Layout);
 	floor.DoOpenGL(true);
 
+	Material level1(&asteroidShader, bluePrintTexture);
+
+	Level level({ 10.0f, 10.0f, 10.0f }, { { {0.0f, -20.0f, 0.0f}, {20.0f, 20.0f, 20.0f} } }, level1);
+	// {
+	// 	BufferLayout bl(5);
+	// 
+	// 	bl.Push<glm::mat4>(1);
+	// 	bl.SetInstanced();
+	// 
+	// 	level.m_VAO.AddBuffer(level.m_InstanceVBO, bl);
+	// }
+
 	// only when everything is set up, do this:
 	Window::Get().Maximize();
 
@@ -419,11 +378,7 @@ int main() {
 
 	bool normalMappingToggled = false;
 
-#if ENABLE_SHADOWS
-	int SHADOWS = 1;
-#else
-	const bool SHADOWS = false;
-#endif
+	glm::vec3 spherePos(0.0f);
 
 #if ENABLE_BLOOM
 	Framebuffers::Bind(0);
@@ -464,96 +419,10 @@ int main() {
 	}
 #endif
 
-	pointLightPassShader.Use();
-	pointLightPassShader.SetVec2("screenSize", (float)Window::Get().GetWidth(), (float)Window::Get().GetHeight());
 	// saber.DoOpenGL();
 	while (!Window::Get().ShouldClose())
 	{
 		StartFrame();
-
-#if ENABLE_SHADOWS
-		ImGui::DragInt("Number of shadows", &SHADOWS, 1.0f, 0, pointLightPositions.size());
-
-		glm::mat4 dirLightSpaceMatrix;
-		std::array<glm::mat4, 6> pointLightSpaceMatrix;
-
-		// generate the depth map:
-		if (SHADOWS)
-		{
-			glm::mat4 view = glm::lookAt(lightDir, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-			glm::mat4 projection = glm::ortho(-lSS, lSS, -lSS, lSS, near_plane, far_plane);
-
-			dirLightSpaceMatrix = projection * view;
-
-			glViewport(0, 0, DEPTH_MAP_RES, DEPTH_MAP_RES);
-
-			Shadows::Bind(Shadows::dirMap, Shadows::Shaders::iDirLight);
-
-			// for the dir light:
-			{
-				// render the rock
-
-				Shadows::Shaders::iDirLight->use();
-
-				Shadows::Shaders::iDirLight->setMat4("lightSpaceMatrix", dirLightSpaceMatrix);
-
-				rock.DrawInstanced(*Shadows::Shaders::iDirLight, count, false);
-
-				// render the backpack
-				backpack.DrawInstanced(*Shadows::Shaders::iDirLight, (unsigned int)objectPositions.size(), false);
-
-				glActiveTexture(GL_TEXTURE14);
-				glBindTexture(GL_TEXTURE_2D, Shadows::dirMap);
-			}
-
-			Shadows::Bind(Shadows::pointMap, Shadows::Shaders::iPointLight);
-
-			// set up pointLightSpaceMatrix
-			projection = glm::perspective(glm::radians(90.0f), 1.0f, near_plane, far_plane);
-
-			pointLightSpaceMatrix[0] = projection *
-				glm::lookAt(pointLightPositions[0], pointLightPositions[0] + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
-			pointLightSpaceMatrix[1] = projection *
-				glm::lookAt(pointLightPositions[0], pointLightPositions[0] + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
-			pointLightSpaceMatrix[2] = projection *
-				glm::lookAt(pointLightPositions[0], pointLightPositions[0] + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-			pointLightSpaceMatrix[3] = projection *
-				glm::lookAt(pointLightPositions[0], pointLightPositions[0] + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
-			pointLightSpaceMatrix[4] = projection *
-				glm::lookAt(pointLightPositions[0], pointLightPositions[0] + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
-			pointLightSpaceMatrix[5] = projection *
-				glm::lookAt(pointLightPositions[0], pointLightPositions[0] + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
-
-			{
-				// render the rocks
-				glm::mat4 model = glm::mat4(1.0f);
-
-				Shadows::Shaders::iPointLight->setVec3("lightPos", pointLightPositions[0]);
-				Shadows::Shaders::iPointLight->setFloat("far_plane", far_plane);
-
-				for (int i = 0; i < 6; i++)
-					Shadows::Shaders::iPointLight->setMat4("lightSpaceMatrices[" + std::to_string(i) + "]", pointLightSpaceMatrix[i]);
-
-				/*
-				for (int i = 0; i < count; i++) {
-					pointLightShadowShader.setMat4("model", modelMatrices[i]);
-					rock.Draw(pointLightShadowShader);
-				}
-				*/
-				// asteroidShadowShader.setMat4("lightSpaceMatrix", pointLightSpaceMatrix);
-				rock.DrawInstanced(*Shadows::Shaders::iPointLight, count, false);
-
-				// render the backpack
-				backpack.DrawInstanced(*Shadows::Shaders::iPointLight, objectPositions.size(), false);
-			}
-
-			glActiveTexture(GL_TEXTURE15);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, Shadows::pointMap);
-
-			glViewport(0, 0, WIDTH, HEIGHT);
-		}
-#endif
 
 		// Set the current framebuffer to the correct one
 		Framebuffers::Bind(Framebuffers::main);
@@ -564,11 +433,12 @@ int main() {
 
 		// update the UBO's:
 		{
-			viewProjUBO.SetData(0, 64, glm::value_ptr(VP));
+			matrixUBO.SetData(0, sizeof(glm::mat4), glm::value_ptr(VP));
+			matrixUBO.SetData(64, sizeof(glm::vec3), &Camera::Get().Position);
 
 			lightsUBO.SetData(0, 12, glm::value_ptr(lightDir));
-			lightsUBO.SetData(384, 12, glm::value_ptr(Camera::Get().m_Position));
-			lightsUBO.SetData(400, 12, glm::value_ptr(Camera::Get().m_Front));
+			lightsUBO.SetData(384, 12, glm::value_ptr(Camera::Get().Position)); // Spotlight pos
+			lightsUBO.SetData(400, 12, glm::value_ptr(Camera::Get().Front));	// Spotlight dir
 
 			// set light direction
 			ImGui::DragFloat3("Light direction", glm::value_ptr(lightDir), 0.1f, -5.0f, 5.0f);
@@ -594,27 +464,6 @@ int main() {
 		ImGui::NewLine();
 
 		glEnable(GL_DEPTH_TEST);
-		// draw normals
-		if (normalsToggled)
-		{
-			Profiler p("normal drawing");
-			normalShader.Use();
-			normalShader.SetFloat("Magnitude", normalMagnitude);
-			normalShader.SetMat4("view", Camera::Get().GetViewMatrix());
-			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-			model = glm::scale(model, glm::vec3(5.0f));
-			normalShader.SetMat4("model", model);
-
-			instancedNormalShading.Use();
-			instancedNormalShading.SetFloat("Magnitude", normalMagnitude);
-			instancedNormalShading.SetMat4("view", Camera::Get().GetViewMatrix());
-			instancedNormalShading.SetMat4("proj", Camera::Get().GetProjMatrix());
-
-			// renderer.IDraw(rock, instancedNormalShading, count);
-
-			// renderer.IDraw(backpack, instancedNormalShading, objectPositions.size());
-		}
 		// draw pointlights
 		{
 			Profiler p("pointLights drawing");
@@ -629,16 +478,6 @@ int main() {
 				// renderer.Draw(box, lightShader);
 				box.Draw(lightShader, false);
 			}
-
-			glDisable(GL_CULL_FACE);
-			lightShader.SetMat4("model", glm::mat4(1.0f));
-			// renderer.Draw(map, lightShader);
-
-			lightMaterial.SetColors({ 0.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 0.0f });
-			// renderer.Draw(sphere, lightShader);
-			sphere.Draw(lightShader, false);
-
-			glEnable(GL_CULL_FACE);
 		}
 		// draw backpack
 		{
@@ -646,17 +485,13 @@ int main() {
 
 			shader.Use();
 			// pass transformation matrices to the shader
-			shader.SetVec3("viewPos", Camera::Get().m_Position);
-#if ENABLE_SHADOWS
-			if (SHADOWS)
-				shader.setMat4("lightSpaceMatrix", dirLightSpaceMatrix);
-#endif
+			shader.SetVec3("viewPos", Camera::Get().Position);
 			Transform t;
 			t.setLocalScale(glm::vec3{ 5.0f });
 			// render the loaded model
 			shader.SetMat4("model", t.getModelMatrix());
 			asteroidShader.Use();
-			asteroidShader.SetVec3("viewPos", Camera::Get().m_Position);
+			asteroidShader.SetVec3("viewPos", Camera::Get().Position);
 			asteroidShader.SetFloat("height_scale", 0.1f);
 
 			// renderer.IDraw(backpack, asteroidShader, objectPositions.size());
@@ -681,15 +516,45 @@ int main() {
 			glm::mat4 model(1.0f);
 
 			shader.SetMat4("model", model);
-			shader.SetVec3("viewPos", Camera::Get().m_Position);
+			shader.SetVec3("viewPos", Camera::Get().Position);
 			floor.Draw(true);
 
 			textureShader.Use();
 
 			textureShader.SetMat4("model", model);
 
-			blueprintBox.Draw(true);
+			// blueprintBox.Draw(true);
+
+			level.Render(asteroidShader);
 		}
+		// depth shenanigans: has to happen after everything, but before skybox
+		{
+
+			float depth;
+			// After everything:
+			if (Window::Get().GetMouseButtonDown(1)) {
+				glReadPixels(Window::Get().GetWidth() / 2, Window::Get().GetHeight() / 2, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+
+				float zNorm = 2.0f * depth - 1.0f;
+				float zFar = Camera::Get().Options.ZFar;
+				float zNear = Camera::Get().Options.ZNear;
+				float zView = -2.0f * zNear * zFar / ((zFar - zNear) * zNorm - zNear - zFar);
+
+				spherePos = Camera::Get().Position + Camera::Get().Front * zView;
+
+				ImGui::Text("Depth: %f %f %f", spherePos.x, spherePos.y, spherePos.z);
+			}
+
+			lightShader.Use();
+			lightShader.SetMat4("model", glm::mat4(1.0f));
+
+			lightMaterial.SetColors({ 0.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 0.0f });
+			glm::mat4 model(1.0f);
+			model = glm::translate(model, spherePos);
+			lightShader.SetMat4("model", model);
+			sphere.Draw(lightShader, false);
+		}
+
 		// Last, draw the skybox:
 		{
 			Profiler p("skyBox drawing");
@@ -717,16 +582,9 @@ int main() {
 		t.setLocalScale(glm::vec3{ 0.01f });
 
 		shader.SetMat4("model", t.getModelMatrix());
-		shader.SetVec3("viewPos", Camera::Get().m_Position);
+		shader.SetVec3("viewPos", Camera::Get().Position);
 		glm::mat4 MVP = VP;
 		// saber.Draw(shader, Camera::Get().GetFrustum(), t);
-
-		float depth;
-		// After everything:
-		if (1)//Window::Get().GetMouseButtonDown(0))
-			glReadPixels(Window::Get().GetWidth() / 2, Window::Get().GetHeight() / 2, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
-
-		ImGui::Text("Depth: %f", depth);
 
 #if ENABLE_BLOOM
 		if (bloomToggled)
@@ -817,7 +675,7 @@ int main() {
 
 		// renderer.Finalize();
 
-		glm::vec3& front = Camera::Get().m_Front;
+		const glm::vec3& front = Camera::Get().Front;
 		ImGui::Text("Front: %f %f %f", front.x, front.y, front.z);
 
 		Framebuffers::Draw(exposure, Framebuffers::mainTex, bloomRTs[2]);

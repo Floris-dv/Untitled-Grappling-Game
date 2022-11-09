@@ -57,75 +57,40 @@
     <ClCompile Include="src\Shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Shadows.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vendor\imgui\imgui_tables.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vendor\imgui\imgui_widgets.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vendor\imgui\imgui_draw.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vendor\imgui\imgui_demo.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vendor\glad\glad.c">
+    <ClCompile Include="vendor\Vendor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vendor\imgui\backends\imgui_impl_opengl3.cpp">
+    <ClCompile Include="vendor\ImGuiBuild.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vendor\imgui\backends\imgui_impl_glfw.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vendor\stb_image.cpp">
+    <ClCompile Include="src\Level.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\Shaders\Bloom.comp" />
-    <None Include="src\Shaders\Bloompass.frag" />
-    <None Include="src\Shaders\Blur.frag" />
-    <None Include="src\Shaders\GBuffer.frag" />
-    <None Include="src\Shaders\GBuffer.vert" />
-    <None Include="src\Shaders\InstancedDirShadow.vert" />
-    <None Include="src\Shaders\InstancedGBuffer.vert" />
-    <None Include="src\Shaders\InstancedNormalShowing.vert" />
-    <None Include="src\Shaders\InstancedPointShadows.vert" />
-    <None Include="src\Shaders\LightPass.frag" />
-    <None Include="src\Shaders\PointlightPass.frag" />
-    <None Include="src\Shaders\PointLightShadow.frag" />
-    <None Include="src\Shaders\PointLightShadow.vert" />
-    <None Include="src\Shaders\PointLightShadow.geom" />
-    <None Include="src\Shaders\Asteroids.vert" />
-    <None Include="src\Shaders\Backpack.frag" />
-    <None Include="src\Shaders\Exploding.geom" />
-    <None Include="src\Shaders\Shadow.frag" />
-    <None Include="src\Shaders\Shadow.vert" />
-    <None Include="src\Shaders\ShowNormals.geom" />
-    <None Include="src\Shaders\PostProcessing.frag" />
-    <None Include="src\Shaders\FrameBuffer.vert" />
-    <None Include="src\Shaders\Light.frag" />
-    <None Include="src\Shaders\Light.vert" />
-    <None Include="src\Shaders\ShowNormals.vert" />
-    <None Include="src\Shaders\Skybox.frag" />
-    <None Include="src\Shaders\Skybox.vert" />
-    <None Include="src\Shaders\Backpack.vert" />
-    <None Include="src\Shaders\SkyboxGBuffer.frag" />
-    <None Include="src\Shaders\Texture.frag" />
-    <None Include="src\Shaders\Texture.vert" />
+    <None Include="src\Maybe Later\Deferred Shading\GBuffer.frag" />
+    <None Include="src\Maybe Later\Deferred Shading\GBuffer.vert" />
+    <None Include="src\Maybe Later\Shadows\InstancedDirShadow.vert" />
+    <None Include="src\Maybe Later\Deferred Shading\InstancedGBuffer.vert" />
+    <None Include="src\Maybe Later\Shadows\InstancedPointShadows.vert" />
+    <None Include="src\Maybe Later\Deferred Shading\LightPass.frag" />
+    <None Include="src\Maybe Later\Deferred Shading\PointlightPass.frag" />
+    <None Include="src\Maybe Later\Shadows\PointLightShadow.frag" />
+    <None Include="src\Maybe Later\Shadows\PointLightShadow.vert" />
+    <None Include="src\Maybe Later\Shadows\PointLightShadow.geom" />
+    <None Include="src\Maybe Later\Shadows\Shadow.frag" />
+    <None Include="src\Maybe Later\Shadows\Shadow.vert" />
+    <None Include="src\Maybe Later\Deferred Shading\SkyboxGBuffer.frag" />
+    <None Include="src\Maybe Later\Shadows\ShadowCalculation.frag" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Vendor\imgui\imconfig.h">
@@ -182,9 +147,6 @@
     <ClInclude Include="src\Renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Shadows.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Transform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -221,5 +183,24 @@
     <ClInclude Include="src\assimp\config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Level.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="src\Shaders\Instanced.vert" />
+    <CustomBuild Include="src\Shaders\MainFrag.frag" />
+    <CustomBuild Include="src\Shaders\NoInstance.vert" />
+    <CustomBuild Include="src\Shaders\Bloom.comp" />
+    <CustomBuild Include="src\Shaders\Bloompass.frag" />
+    <CustomBuild Include="src\Shaders\Blur.frag" />
+    <CustomBuild Include="src\Shaders\FrameBuffer.vert" />
+    <CustomBuild Include="src\Shaders\LightFrag.frag" />
+    <CustomBuild Include="src\Shaders\LightVert.vert" />
+    <CustomBuild Include="src\Shaders\PostProcessing.frag" />
+    <CustomBuild Include="src\Shaders\SkyboxFrag.frag" />
+    <CustomBuild Include="src\Shaders\SkyboxVert.vert" />
+    <CustomBuild Include="src\Shaders\TextureFrag.frag" />
+    <CustomBuild Include="src\Shaders\TextureVert.vert" />
   </ItemGroup>
 </Project>

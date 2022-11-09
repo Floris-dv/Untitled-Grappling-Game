@@ -66,40 +66,40 @@ struct SpotLight {     // offset: total size = 96
     float outerCutOff; // 92
 };
 
-in VS_TO_FS {
+struct simpleSpotLight {
+    float cutOff;      
+    float outerCutOff; 
+};
+
+layout (location = 0) in VS_TO_FS {
     vec3 FragPos;
     vec2 TexCoords;
     vec3 Normal;
-    vec4 FragPosLightSpace;
+    vec3 ViewDir;
     // things in tangent space
     mat3 TBN;
 } fs_in;
 
-uniform vec3 viewPos;
-uniform Material material;
-uniform samplerCube skyBox;
+layout (binding = 0) uniform samplerCube skyBox;
 
-uniform sampler2D shadowMapDir;
-uniform samplerCube shadowMapPoint;
-
-uniform float far_plane;
-uniform float height_scale; // the scaling of the parallex mapping
+layout (location = 2) uniform Material material;
+layout (location = 12) uniform float far_plane;
+layout (location = 13) uniform float height_scale; // the scaling of the parallex mapping
 
 #define numPointLights 4
 
-layout (std140) uniform Lights {
+layout (std140, binding = 1) uniform Lights {
     DirLight dirLight; // 0
     PointLight pointLights[numPointLights]; // +64; +144; +224; +304
     SpotLight SL; // + 384
     // total: 480 bytes, = 124 floats
 };
 
-uniform SpotLight spotLight; 
+layout (location = 10) uniform simpleSpotLight spotLight; 
 
 // global values
 vec2 texCoords;
 vec3 normal;
-vec3 viewDir;
 vec3 diffuseTex;
 vec3 specularTex;
 
@@ -111,7 +111,7 @@ float when_gt(float x, float y) {
 float calculateSpec(vec3 lightDir) {
 #if USE_BLIN_PHONG
     // blin-phong lighting model
-    vec3 halfWayDir = normalize(lightDir + viewDir);
+    vec3 halfWayDir = normalize(lightDir + fs_in.ViewDir);
     float spec = max(dot(halfWayDir, normal), 0.0);
 
     // this model doesn't conserve energy, which I'd like to have, so someone at https://www.rorydriscoll.com/2009/01/25/energy-conservation-in-games/
@@ -128,89 +128,9 @@ float calculateSpec(vec3 lightDir) {
     return spec;
 }
 
-// uses a sampler2D
-float calculateShadowDir(vec4 fragPosLightSpace, in sampler2D s)
-{
-    // perform perspective divide
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    // transform to [0,1] range
-    projCoords = projCoords * 0.5 + 0.5;
-    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    float closestDepth = texture(s, projCoords.xy).r; 
-    // get depth of current fragment from light's perspective
-    float currentDepth = projCoords.z;
-    // calculate bias (based on depth map resolution and slope)
-    /*
-    vec3 lightDir = normalize(lightPos - fs_in.FragPos);
-    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-    */
-    float bias = 0.001;
-    // PCF
-    float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(s, 0);
-    for(int x = -1; x < 2; x++)
-    {
-        for(int y = -1; y < 2; y++)
-        {
-            float pcfDepth = texture(s, projCoords.xy + vec2(x, y) * texelSize).r; 
-            shadow += when_gt(currentDepth - bias, pcfDepth);
-        }
-    }
-    shadow /= 25.0;
-    
-    // keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
-
-    shadow *= when_gt(1.0, projCoords.z);
-        
-    return shadow;
-}
-
-float calculateShadowPoint(vec3 fragPos, vec3 lightPos, in samplerCube s)
-{
-    // transform the frag pos to a position relative to the lights position
-    vec3 fragToLight = fragPos - lightPos;
-
-    float closestDepth = texture(s, fragToLight).r; 
-    // transform closestDepth into range [0, far_plane]
-    closestDepth *= far_plane;
-
-    // get the current depth by calculating the distance between the fragPos and the lightPos
-    float currentDepth = length(fragToLight);
-    
-    const float bias = 0.05; 
-
-    // PCF
-#if USE_PCF
-    const vec3 sampleOffsetDirections[20] = vec3[]
-    (
-       vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1), 
-       vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
-       vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
-       vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
-       vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
-    );   
-
-    float shadow  = 0.0;
-    const int samples = 20;
-    const float offset  = 0.1;
-    const float diskRadius = 0.05;
-
-    for(int i = 0; i < samples; ++i) {
-        float closestDepth = texture(s, fragToLight + sampleOffsetDirections[i] * diskRadius).r;
-        closestDepth *= far_plane;   // undo mapping [0;1]
-        shadow += when_gt(currentDepth - bias, closestDepth);
-    }
-    shadow /= (samples * samples * samples);
-#else
-    float shadow = when_gt(currentDepth - bias, closestDepth);
-#endif
-
-    return shadow;
-}
-
 // calculate the light from a directional light (like the sun) (includes Specular, Diffuse, and Ambient lighting)
 // normal & viewdir need to be normalized for this to work
-vec3 calcDirLight(DirLight light, in sampler2D s) {
+vec3 calcDirLight(DirLight light) {
     vec3 ambient = light.ambient * diffuseTex;
 
     // diffuse 
@@ -225,7 +145,7 @@ vec3 calcDirLight(DirLight light, in sampler2D s) {
     // no antenuation
 
     // shadow:
-    float shadow = calculateShadowDir(fs_in.FragPosLightSpace, s);
+    float shadow = 0.0;
 
     return ambient + (1.0 - shadow) * (diffuse + specular);  
 }
@@ -250,7 +170,7 @@ vec3 calcPointLight(PointLight light, vec3 fragPos) {
 
     vec3 specular = light.specular * spec * specularTex;
 
-    float shadow = calculateShadowPoint(fragPos, light.position, shadowMapPoint);
+    float shadow = 0.0;
 
     return ambient + (diffuse + specular) * (1.0 - shadow) * attenuation;
 }
@@ -258,7 +178,7 @@ vec3 calcPointLight(PointLight light, vec3 fragPos) {
 
 // calculate the light from a spotlight (includes Specular, Diffuse, and Ambient lighting)
 // normal & viewdir need to be normalized for this to work
-vec3 calcSpotLight(SpotLight light, SpotLight sl, vec3 fragPos) {
+vec3 calcSpotLight(simpleSpotLight light, SpotLight sl, vec3 fragPos) {
     // attenuation
     float d = length(sl.position - fragPos);
     float attenuation = 1.0 / (1.0 + sl.linear * d + sl.quadratic * (d * d));
@@ -347,11 +267,10 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
 
 void main() 
 {
-    viewDir = normalize(viewPos - fs_in.FragPos);
 #if USE_PARALLEX_MAPPING
     // offset texture coords with parallex mapping:
     texCoords = fs_in.TexCoords;
-    texCoords = ParallaxMapping(texCoords, viewDir);
+    texCoords = ParallaxMapping(texCoords, fs_in.ViewDir);
     // there sometimes are weird border artifacts, as the texcoords can sample outside of the range [0,1], solution: discard it then
     if(texCoords.x > 1.0 || texCoords.y > 1.0 || texCoords.x < 0.0 || texCoords.y < 0.0)
         discard;
@@ -377,7 +296,7 @@ void main()
         specularTex = material.spec0;
     }
 
-    vec3 res = calcDirLight(dirLight, shadowMapDir);
+    vec3 res = calcDirLight(dirLight);
 
     for (int i = 0; i < numPointLights; i++)
        res += calcPointLight(pointLights[i], fs_in.FragPos);

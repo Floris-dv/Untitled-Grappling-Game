@@ -9,8 +9,8 @@ const float Epsilon = 1.0e-4;
 layout(binding = 1) uniform sampler2D u_Texture;
 layout(binding = 2) uniform sampler2D u_BloomTexture;
 
-uniform vec4 Params; // x: threshold, y: threshold - knee, z: knee * 2, w: 0.25 / knee
-uniform vec2 LodAndMode;
+layout (location = 0) uniform vec4 Params; // x: threshold, y: threshold - knee, z: knee * 2, w: 0.25 / knee
+layout (location = 1) uniform vec2 LodAndMode;
 
 #define BLOOM_MODE_PREFILTER      0
 #define BLOOM_MODE_DOWNSAMPLE     1

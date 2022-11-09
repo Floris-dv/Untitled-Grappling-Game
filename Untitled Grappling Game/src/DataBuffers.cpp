@@ -100,6 +100,7 @@ void VertexArray::AddBuffer(const VertexBuffer& VBO, const BufferLayout& layout)
 		offset += e.GetSize();
 	}
 	glVertexArrayVertexBuffer(m_ID, m_VBIndex, VBO.ID(), 0, layout.GetStride());
+
 	if (layout.GetInstanced())
 		glVertexArrayBindingDivisor(m_ID, m_VBIndex, 1);
 

@@ -38,9 +38,11 @@ void Window::Init(const WindowProps& props)
 		});
 #endif
 
+
 	m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, m_Props.Title.c_str(), nullptr, nullptr);
 
 	glfwMakeContextCurrent(m_Window);
+	glfwSetWindowAttrib(m_Window, GLFW_MOUSE_PASSTHROUGH, false);
 
 	m_Props = props;
 	m_Props.Functions.WindowResizeFn = [](uint32_t width, uint32_t height) {};
@@ -192,7 +194,7 @@ void Window::SetupOpenGL()
 	glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 	glDebugMessageCallback(debug_message_callback, nullptr);
-	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, GL_TRUE);
 #endif
 
 	// background color, change if you want
@@ -286,4 +288,6 @@ static void APIENTRY debug_message_callback(GLenum source, GLenum type, GLuint i
 	case GL_DEBUG_SEVERITY_MEDIUM:			NG_WARN("OpenGL callback: source: {}; type: {}, ID: {}\nMessage: {}", sourceName, typeName, id, message);	break;
 	case GL_DEBUG_SEVERITY_HIGH:			NG_ERROR("OpenGL callback: source: {}; type: {}, ID: {}\nMessage: {}", sourceName, typeName, id, message);	break;
 	}
+
+	__debugbreak();
 }

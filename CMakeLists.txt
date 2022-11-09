@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED( VERSION 3.10 )
+CMAKE_MINIMUM_REQUIRED( VERSION 3.20 )
 
 project(GrapplingGame VERSION 0.1)
 
@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(VENDOR "${CMAKE_CURRENT_SOURCE_DIR}/Untitled Grappling Game/vendor")
 
 find_package( OpenGL REQUIRED )
+find_package( glslangValidator REQUIRED )
 
 include_directories(
 	${VENDOR}/spdlog/include
@@ -19,7 +20,6 @@ include_directories(
 	${VENDOR}/glm
 	"${CMAKE_CURRENT_SOURCE_DIR}/Untitled Grappling Game/src"
 	${VENDOR}
-	${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/Include
 	${OPENGL_INCLUDE_DIRS}
 )
 add_subdirectory(${VENDOR})
@@ -28,9 +28,9 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Untitled Grappling Game/src")
 
 add_executable(App)
 
-target_sources(App PRIVATE ${SOURCE_FILES} ${Vendor}/ImGuiBuild.cpp ${Vendor}/Vendor.cpp)
+target_sources(App PRIVATE ${SOURCE_FILES} ${VENDOR}/ImGuiBuild.cpp ${VENDOR}/Vendor.cpp)
 
-target_precompile_headers(App PRIVATE pch.h)
+target_precompile_headers(App PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Untitled Grappling Game/src/pch.h)
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT App)
 

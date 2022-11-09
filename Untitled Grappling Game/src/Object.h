@@ -8,9 +8,6 @@ template<typename T = Vertex>
 struct Object
 {
 private:
-	std::vector<T> m_Vertices;
-	std::vector<GLuint> m_Indices;
-
 	unsigned int m_NumVerts;
 	bool m_UseIBO = false;
 
@@ -30,31 +27,35 @@ public:
 	Object<T>& operator=(const Object& other) = delete;
 
 	template<std::size_t VBOSize, size_t IBOSize = 0>
-	Object(Material* material, const std::array<T, VBOSize>& VBOData, const BufferLayout& bufferLayout, const std::array<GLuint, IBOSize>& IBOData = std::array<GLuint, 0>())
-		: m_Vertices{ VBOData.begin(), VBOData.end() }, m_Indices{ IBOData.begin(), IBOData.end() }, m_Material(material), m_UseIBO(!IBOData.empty()), m_VBO(m_Vertices.size() * sizeof(T), m_Vertices.data())
+	Object(Material* material, const std::array<T, VBOSize>& vertices, const BufferLayout& bufferLayout, const std::array<GLuint, IBOSize>& indices = std::array<GLuint, 0>())
+		: m_Material(material), m_UseIBO(!indices.empty()), m_VBO(vertices.size() * sizeof(T), vertices.data())
 	{
 		VAO.AddBuffer(m_VBO, bufferLayout);
 
 		if (m_UseIBO) {
-			m_NumVerts = IBOData.size();
-			m_IBO = IndexBuffer(IBOData.size() * sizeof(unsigned int), IBOData.data());
+			m_NumVerts = indices.size();
+			m_IBO = IndexBuffer(m_NumVerts * sizeof(unsigned int), indices.data());
 			VAO.AddIndexBuffer(m_IBO);
 		}
 		else
-			m_NumVerts = VBOData.size();
+			m_NumVerts = vertices.size();
 	}
 
-	Object(Material* material, std::vector<T>&& vertices, const BufferLayout& bufferLayout, std::vector<GLuint>&& indices);
+	Object(Material* material, const std::vector<T>& vertices, const BufferLayout& bufferLayout, const std::vector<GLuint>& indices);
 
-	Object(Material* material, std::vector<T>&& vertices, const BufferLayout& bufferLayout);
+	Object(Material* material, const std::vector<T>& vertices, const BufferLayout& bufferLayout);
 
 	virtual void Draw(bool setTextures);
 
 	virtual void Draw(Shader& shader, bool setTextures);
 
+	virtual void DrawInstanced(bool setTextures, unsigned int count);
+
 	virtual void DrawInstanced(Shader& shader, bool setTextures, unsigned int count);
 
 	virtual void SetInstanceBuffer(const VertexBuffer& instanceBuffer);
+
+	inline bool IsValid() { return VAO.IsValid(); }
 
 	void DoOpenGL(bool deleteAfter) { m_Material->LoadTextures(deleteAfter); }
 };
@@ -73,9 +74,8 @@ static const BufferLayout instanceBufferLayout = {
 };
 
 template<typename T>
-Object<T>::Object(Material* material, std::vector<T>&& vertices, const BufferLayout& bufferLayout)
-	: m_Material(material), m_NumVerts(m_Vertices.size()), m_Vertices(std::move(vertices)),
-	m_VBO(m_Vertices.size() * sizeof(T), m_Vertices.data())
+Object<T>::Object(Material* material, const std::vector<T>& vertices, const BufferLayout& bufferLayout)
+	: m_Material(material), m_NumVerts(vertices.size()), m_VBO(vertices.size() * sizeof(T), vertices.data())
 {
 	VAO.AddBuffer(m_VBO, bufferLayout);
 }
@@ -100,11 +100,11 @@ inline void Object<T>::Draw(bool setTextures)
 }
 
 template<typename T>
-Object<T>::Object(Material* material, std::vector<T>&& vertices, const BufferLayout& bufferLayout, std::vector<GLuint>&& indices)
-	: m_Material(material), m_Vertices(std::move(vertices)), m_Indices(std::move(indices)), m_UseIBO(true),
-	m_VBO(m_Vertices.size() * sizeof(T), m_Vertices.data()),
-	m_IBO(m_Indices.size() * sizeof(GLuint), m_Indices.data()),
-	m_NumVerts(m_Indices.size())
+Object<T>::Object(Material* material, const std::vector<T>& vertices, const BufferLayout& bufferLayout, const std::vector<GLuint>& indices)
+	: m_Material(material), m_UseIBO(true),
+	m_VBO(vertices.size() * sizeof(T), vertices.data()),
+	m_IBO(indices.size() * sizeof(GLuint), indices.data()),
+	m_NumVerts(indices.size())
 {
 	VAO.AddBuffer(m_VBO, bufferLayout);
 	VAO.AddIndexBuffer(m_IBO);
@@ -147,14 +147,29 @@ void Object<T>::DrawInstanced(Shader& shader, bool setTextures, unsigned int cou
 	glActiveTexture(GL_TEXTURE0);
 }
 
+
+template<typename T>
+void Object<T>::DrawInstanced(bool setTextures, unsigned int count)
+{
+	if (!m_NumVerts)
+		return;
+
+	m_Material->Load(setTextures);
+
+	VAO.Bind();
+	if (m_UseIBO)
+		glDrawElementsInstanced(GL_TRIANGLES, m_NumVerts, GL_UNSIGNED_INT, (void*)0, count);
+	else
+		glDrawArraysInstanced(GL_TRIANGLES, 0, m_NumVerts, count);
+
+	VAO.UnBind();
+
+	glActiveTexture(GL_TEXTURE0);
+}
+
 template<typename T>
 void Object<T>::SetInstanceBuffer(const VertexBuffer& instanceBuffer) {
 	VAO.AddBuffer(instanceBuffer, instanceBufferLayout);
-
-	glVertexAttribDivisor(5, 1);
-	glVertexAttribDivisor(6, 1);
-	glVertexAttribDivisor(7, 1);
-	glVertexAttribDivisor(8, 1);
 }
 
 template<typename T>

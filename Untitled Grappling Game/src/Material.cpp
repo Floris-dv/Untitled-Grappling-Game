@@ -2,50 +2,56 @@
 #include "Material.h"
 #include <glad/glad.h>
 
-Material::Material(Shader* shader, const std::vector<Texture>& texs) noexcept : textures(texs), OpenGLPrepared(true), shader(shader), useTextures(true)
+Material::Material(Shader* shader, const std::vector<Texture>& texs) noexcept : m_Textures(texs), m_OpenGLPrepared(true), m_Shader(shader), m_UseTextures(true)
 {}
 
-Material::Material(Shader* shader, std::vector<Texture>&& texs) noexcept : textures(std::move(texs)), OpenGLPrepared(true), shader(shader), useTextures(true)
+Material::Material(Shader* shader, std::vector<Texture>&& texs) noexcept : m_Textures(std::move(texs)), m_OpenGLPrepared(true), m_Shader(shader), m_UseTextures(true)
 {}
 
-Material::Material(Shader* shader, std::vector<std::shared_future<LoadingTexture*>>&& loadingTexs) noexcept : loadingTextures(std::move(loadingTexs)), OpenGLPrepared(false), shader(shader), useTextures(true)
+Material::Material(Shader* shader, std::vector<std::shared_future<LoadingTexture*>>&& loadingTexs) noexcept : m_LoadingTextures(std::move(loadingTexs)), m_OpenGLPrepared(false), m_Shader(shader), m_UseTextures(true)
 {}
 
-Material::Material(Shader* shader, const glm::vec3& diff, const glm::vec3& spec) noexcept : diffColor(diff), specColor(spec), shader(shader), useTextures(false), OpenGLPrepared(true)
+Material::Material(Shader* shader, const glm::vec3& diff, const glm::vec3& spec) noexcept : m_Diffuse(diff), m_Specular(spec), m_Shader(shader), m_UseTextures(false), m_OpenGLPrepared(true)
 {}
+
+Material::Material(const Material& other) : m_Shader(other.m_Shader), m_Textures(other.m_Textures), m_Diffuse(other.m_Diffuse), m_Specular(other.m_Specular), m_UseTextures(other.m_UseTextures), m_OpenGLPrepared(true)
+{
+	if (!other.m_OpenGLPrepared)
+		throw std::runtime_error("Can't copy other futures");
+}
 
 void Material::SetColors(const glm::vec3& diff, const glm::vec3& spec)
 {
-	diffColor = diff;
-	specColor = spec;
+	m_Diffuse = diff;
+	m_Specular = spec;
 }
 
 void Material::LoadTextures(bool deleteData)
 {
-	if (OpenGLPrepared)
+	if (m_OpenGLPrepared)
 		return;
 
-	OpenGLPrepared = true;
-	for (auto& lt : loadingTextures) {
+	m_OpenGLPrepared = true;
+	for (auto& lt : m_LoadingTextures) {
 		auto& s = lt.get();
-		textures.push_back(s->Finish());
+		m_Textures.push_back(s->Finish());
 		if (deleteData)
 			delete s;
 	}
 
 	if (deleteData)
-		loadingTextures.clear();
+		m_LoadingTextures.clear();
 }
 
 void Material::Load(bool setTextures)
 {
-	shader->Use();
+	m_Shader->Use();
 	unsigned int diffuseNr = 0, specularNr = 0, normalNr = 0, heightNr = 0;
 
-	if (useTextures && setTextures) {
-		for (int i = 0; i < textures.size(); i++) {
+	if (m_UseTextures && setTextures) {
+		for (int i = 0; i < m_Textures.size(); i++) {
 			std::string number;
-			TextureType type = textures[i].Type;
+			TextureType type = m_Textures[i].Type;
 
 			switch (type) {
 			case TextureType::diffuse:
@@ -64,16 +70,16 @@ void Material::Load(bool setTextures)
 				throw "ERROR: Texture type is not defined\n";
 			}
 
-			shader->SetInt((names[(int)type] + number).c_str(), i);
-			glBindTextureUnit(i, textures[i].ID);
+			m_Shader->SetInt((names[(int)type] + number).c_str(), i);
+			glBindTextureUnit(i, m_Textures[i].ID);
 		}
 	}
 	else if (setTextures) {
-		shader->SetVec3("material.diff0", diffColor);
-		shader->SetVec3("material.spec0", specColor);
+		m_Shader->SetVec3("material.diff0", m_Diffuse);
+		m_Shader->SetVec3("material.spec0", m_Specular);
 	}
 
-	shader->SetBool("material.useTex", setTextures && useTextures);
+	m_Shader->SetBool("material.useTex", setTextures && m_UseTextures);
 }
 
 void Material::Load(Shader& shader, bool setTextures)
@@ -81,10 +87,10 @@ void Material::Load(Shader& shader, bool setTextures)
 	shader.Use();
 	unsigned int diffuseNr = 0, specularNr = 0, normalNr = 0, heightNr = 0;
 
-	if (useTextures && setTextures) {
-		for (int i = 0; i < textures.size(); i++) {
+	if (m_UseTextures && setTextures) {
+		for (int i = 0; i < m_Textures.size(); i++) {
 			std::string number;
-			TextureType type = textures[i].Type;
+			TextureType type = m_Textures[i].Type;
 
 			switch (type) {
 			case TextureType::diffuse:
@@ -104,19 +110,19 @@ void Material::Load(Shader& shader, bool setTextures)
 			}
 
 			shader.SetInt((names[(int)type] + number).c_str(), i);
-			glBindTextureUnit(i, textures[i].ID);
+			glBindTextureUnit(i, m_Textures[i].ID);
 		}
 	}
 	else if (setTextures) {
-		shader.SetVec3("material.diff0", diffColor);
-		shader.SetVec3("material.spec0", specColor);
+		shader.SetVec3("material.diff0", m_Diffuse);
+		shader.SetVec3("material.spec0", m_Specular);
 	}
 
-	shader.SetBool("material.useTex", setTextures && useTextures);
+	shader.SetBool("material.useTex", setTextures && m_UseTextures);
 }
 
 Material::~Material() noexcept
 {
-	for (auto& t : textures)
+	for (auto& t : m_Textures)
 		glDeleteTextures(1, &t.ID);
 }

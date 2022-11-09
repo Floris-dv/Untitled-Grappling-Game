@@ -167,16 +167,16 @@ static std::pair<std::vector<MinimalVertex>, std::vector<unsigned int>> CreateSp
 	// Calc The Index Positions
 	for (int i = 0; i < slices * stacks + slices; ++i) {
 		indices.push_back((unsigned int)(i * 2));
-		indices.push_back((unsigned int)((i + slices) * 2));
 		indices.push_back((unsigned int)((i + slices + 1) * 2));
+		indices.push_back((unsigned int)((i + slices) * 2));
 		// MAYBE: add tangents/bitangents here
 		vertices.emplace_back(
 			positions[i],
 			glm::cross(positions[i] - positions[i + slices], positions[i] - positions[i + slices + 1])
 		);
 		indices.push_back((unsigned int)(i * 2));
-		indices.push_back((unsigned int)((i + slices + 1) * 2));
 		indices.push_back((unsigned int)((i + 1) * 2));
+		indices.push_back((unsigned int)((i + slices + 1) * 2));
 
 		vertices.emplace_back(
 			positions[i],

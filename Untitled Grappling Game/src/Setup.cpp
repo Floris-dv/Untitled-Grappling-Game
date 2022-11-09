@@ -15,8 +15,6 @@
 // Camera::Get()
 #include "Camera.h"
 
-#include "Shadows.h"
-
 // for Framebuffers setup, also sets framebuffer_size_callback:
 #include "Framebuffers.h"
 
@@ -128,9 +126,9 @@ void Setup() {
 
 	Framebuffers::Setup();
 
-	Shadows::Setup();
+	// Shadows::Setup();
 
-	Camera::Initialize((float)Window::Get().GetWidth() / (float)Window::Get().GetHeight(), 0.1f, 1000.0f, 80.0f);
+	Camera::Initialize({2.5f, 0.1f}, (float)Window::Get().GetWidth() / (float)Window::Get().GetHeight());
 }
 
 void Destroy() {
@@ -161,7 +159,7 @@ void StartFrame() {
 
 	ImGui::Text("Starting frame: %f", deltaTime);
 
-	ImGui::DragFloat("k", &Camera::Get().k, 0.01f, 0.0f, 25.0f);
+	ImGui::DragFloat("Resistance", &Camera::Get().Options.Resistance, 0.01f, 0.0f, 25.0f);
 	updateMovement();
 }
 

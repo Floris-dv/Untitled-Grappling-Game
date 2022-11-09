@@ -2,7 +2,7 @@
 
 layout (location = 0) out vec4 FragColor;
 
-in VS_TO_FS {
+layout (location = 0) in VS_TO_FS {
     vec2 TexCoords;
     vec3 Normal;
 } fs_in;
@@ -49,18 +49,16 @@ struct SpotLight {     // offset: total size = 96
 
 #define numPointLights 4
 
-layout (std140) uniform Lights {
+layout (binding = 1, std140) uniform Lights {
     DirLight dirLight; // 0
     PointLight pointLights[numPointLights]; // +64; +144; +224; +304
     SpotLight SL; // + 384
     // total: 480 bytes, = 124 floats
 };
 
-uniform SpotLight spotLight; 
+layout (location = 3) uniform SpotLight spotLight; 
 
-uniform Material material;
-
-uniform vec3 viewPos;
+layout (location = 2) uniform Material material;
 
 void main() {
     FragColor = vec4(texture(material.diffuse0, fs_in.TexCoords).rgb * dirLight.diffuse * max(dot(normalize(dirLight.direction), fs_in.Normal), 0.2), 1.0);

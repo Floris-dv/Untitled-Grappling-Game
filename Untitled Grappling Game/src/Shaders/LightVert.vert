@@ -1,10 +1,11 @@
 #version 460 core
 layout (location = 0) in vec3 aPos;
 
-uniform mat4 model;
+layout (location = 0) uniform mat4 model;
 
-layout (std140) uniform Matrices{
+layout (binding = 0, std140) uniform Matrices{
     mat4 projview;
+	vec3 viewPos;
 };
 
 void main() 

@@ -125,14 +125,14 @@ static unsigned int TextureFromFile(const char* path, const std::string& directo
 
 std::vector<Texture> Model::LoadTexturesFromType(aiMaterial* mat, aiTextureType type, std::string typeName)
 {
-	std::vector<Texture> textures;
+	std::vector<Texture> m_Textures;
 
 	int tCount = mat->GetTextureCount(type);
 
 	if (!tCount)
-		return textures;
+		return m_Textures;
 
-	textures.reserve(tCount);
+	m_Textures.reserve(tCount);
 
 	for (int i = 0; i < tCount; i++) {
 		aiString str;
@@ -140,7 +140,7 @@ std::vector<Texture> Model::LoadTexturesFromType(aiMaterial* mat, aiTextureType 
 		bool skip = false;
 		for (unsigned int j = 0; j < loaded_textures.size(); j++) {
 			if (std::strcmp(loaded_textures[j].path.data(), str.C_Str()) == 0) {
-				textures.push_back(loaded_textures[j]);
+				m_Textures.push_back(loaded_textures[j]);
 				skip = true;
 				break;
 			}
@@ -151,12 +151,12 @@ std::vector<Texture> Model::LoadTexturesFromType(aiMaterial* mat, aiTextureType 
 			t.path = str.C_Str();
 			t.id = TextureFromFile(str.C_Str(), directory);
 			t.type = typeName;
-			textures.push_back(t);
+			m_Textures.push_back(t);
 			loaded_textures.push_back(t);
 		}
 	}
 
-	return std::move(textures);
+	return std::move(m_Textures);
 }
 #endif
 
@@ -254,10 +254,10 @@ void Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 
 #if QUICK_LOADING
 	// start futures: they can do their thing while the vertices and indices are being processed
-	std::vector<std::shared_future<LoadingTexture*>> textures;
+	std::vector<std::shared_future<LoadingTexture*>> m_Textures;
 	std::vector<std::shared_future<LoadingTexture*>> maps; // just meant as an transport vehicle
 #else
-	std::vector<Texture> textures;
+	std::vector<Texture> m_Textures;
 	std::vector<Texture> maps; // just meant as an transport vehicle
 #endif
 	if (m_EnableTextures)
@@ -266,22 +266,22 @@ void Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 		// 1. diffuse maps
 		if (material->GetTextureCount(aiTextureType_DIFFUSE)) {
 			maps = LoadTexturesFromType(material, aiTextureType_DIFFUSE, TextureType::diffuse);
-			textures.insert(textures.end(), maps.begin(), maps.end());
+			m_Textures.insert(m_Textures.end(), maps.begin(), maps.end());
 		}
 		// 2. specular maps
 		if (material->GetTextureCount(aiTextureType_SPECULAR)) {
 			maps = LoadTexturesFromType(material, aiTextureType_SPECULAR, TextureType::specular);
-			textures.insert(textures.end(), maps.begin(), maps.end());
+			m_Textures.insert(m_Textures.end(), maps.begin(), maps.end());
 		}
 		// 3. normal maps
 		if (material->GetTextureCount(aiTextureType_HEIGHT)) {
 			maps = LoadTexturesFromType(material, aiTextureType_HEIGHT, TextureType::normal);
-			textures.insert(textures.end(), maps.begin(), maps.end());
+			m_Textures.insert(m_Textures.end(), maps.begin(), maps.end());
 		}
 		// 4. height maps
 		if (material->GetTextureCount(aiTextureType_AMBIENT)) {
 			maps = LoadTexturesFromType(material, aiTextureType_AMBIENT, TextureType::height);
-			textures.insert(textures.end(), maps.begin(), maps.end());
+			m_Textures.insert(m_Textures.end(), maps.begin(), maps.end());
 		}
 	}
 
@@ -342,6 +342,6 @@ void Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 	glm::vec3 diffuse(diff[0], diff[1], diff[2]), specular(spec[0], spec[1], spec[2]);
 	std::scoped_lock lg{ m_MeshesMtx };
 
-	m_MultiMesh.Add(vertices, mesh->mAABB, indices, std::move(textures), diffuse, specular, m_EnableTextures && (textures.size() > 0));
+	m_MultiMesh.Add(vertices, mesh->mAABB, indices, std::move(m_Textures), diffuse, specular, m_EnableTextures && (m_Textures.size() > 0));
 	return;
 }

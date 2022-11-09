@@ -25,13 +25,13 @@ static const BufferLayout vertexBufferLayout = {
 
 static bool test_AABB_against_frustum(const glm::mat4& MVP, const aiAABB& boundingBox) { return true; }
 
-void MultiMesh::Add(const std::vector<Vertex>& verts, const AABB& boundingBox, const std::vector<unsigned int>& idxs, std::vector<Texture>&& textures, const glm::vec3& diff, const glm::vec3& spec, bool useTextures) {
+void MultiMesh::Add(const std::vector<Vertex>& verts, const AABB& boundingBox, const std::vector<unsigned int>& idxs, std::vector<Texture>&& m_Textures, const glm::vec3& diff, const glm::vec3& spec, bool m_UseTextures) {
 	SubMesh sm;
 	sm.DiffColor = diff;
 	sm.SpecColor = spec;
-	sm.UseTextures = useTextures;
+	sm.UseTextures = m_UseTextures;
 	sm.Parent = this;
-	sm.Textures = std::move(textures);
+	sm.Textures = std::move(m_Textures);
 	sm.IndexCount = idxs.size();
 	sm.IndexOffset = m_Indices.size();
 	sm.VertexCount = verts.size();
@@ -48,13 +48,13 @@ void MultiMesh::Add(const std::vector<Vertex>& verts, const AABB& boundingBox, c
 	}
 }
 
-void MultiMesh::Add(const std::vector<Vertex>& verts, const AABB& boundingBox, const std::vector<unsigned int>& idxs, std::vector<std::shared_future<LoadingTexture*>>&& textures, const glm::vec3& diff, const glm::vec3& spec, bool useTexs) {
+void MultiMesh::Add(const std::vector<Vertex>& verts, const AABB& boundingBox, const std::vector<unsigned int>& idxs, std::vector<std::shared_future<LoadingTexture*>>&& m_Textures, const glm::vec3& diff, const glm::vec3& spec, bool useTexs) {
 	SubMesh sm;
 	sm.DiffColor = diff;
 	sm.SpecColor = spec;
 	sm.UseTextures = useTexs;
 	sm.Parent = this;
-	sm.LoadingTextures = std::move(textures);
+	sm.LoadingTextures = std::move(m_Textures);
 	sm.IndexCount = idxs.size();
 	sm.IndexOffset = m_Indices.size();
 	sm.VertexCount = verts.size();

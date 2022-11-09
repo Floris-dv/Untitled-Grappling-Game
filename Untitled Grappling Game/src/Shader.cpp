@@ -6,11 +6,34 @@
 
 #include <glad/glad.h>
 
+/*
+* Shader Format:
+* Vertex in:
+*	0 Pos (vec3) 
+*	1 Normal (vec3)
+*	2 TexCoords (vec2)
+*	3 Tangent (vec3)
+*	4 Bitangent (vec3) (not used)
+*	5-8 InstanceMatrix (mat4) (for instanced rendering)
+* Fragment in is with interface blocks. For full-screen passes 0 is used for texCoords
+* Uniforms:
+*	Uniform Buffer binding:
+*		0 Matrices (for now VP matrix & viewPos)
+*		1 Lights 
+*	Uniforms:
+*		0 Model
+*		1 Vertex miscelanious
+*		2 Material
+*		10- Fragment miscelanious
+*/
+
 static std::unordered_map<std::string, GLuint> s_ShaderCache;
+static std::unordered_map<const uint32_t*, GLuint> s_SPIRShaderCache;
+
 
 static unsigned int s_ShaderInUse = 0;
 
-static unsigned int GetShader(const std::string& filename, GLenum type) {
+static GLuint GetShader(const std::string& filename, GLenum type) {
 	if (filename.empty())
 		return 0;
 
@@ -59,6 +82,29 @@ static unsigned int GetShader(const std::string& filename, GLenum type) {
 	return Shader;
 }
 
+static GLuint GetShader(const uint32_t* shaderCode, size_t size, GLenum type) {
+	if (s_SPIRShaderCache.contains(shaderCode))
+		return s_SPIRShaderCache[shaderCode];
+
+	GLuint shader = glCreateShader(type);
+	glShaderBinary(1, &shader, GL_SHADER_BINARY_FORMAT_SPIR_V, shaderCode, size);
+	glSpecializeShader(shader, "main", 0, nullptr, nullptr);
+
+	// check if it went well
+	int succes;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &succes);
+
+	if (!succes) {
+		char infolog[512];
+		glGetShaderInfoLog(shader, 512, nullptr, &infolog[0]);
+		NG_ERROR("Shader {} compilation failed: {}", type, &infolog[0]);
+	}
+
+	s_SPIRShaderCache[shaderCode] = shader;
+
+	return shader;
+}
+
 
 GLint Shader::GetUniformLocation(std::string_view name) const
 {
@@ -101,6 +147,30 @@ Shader::Shader(std::string_view vertexPath, std::string_view fragmentPath, std::
 
 		glGetProgramInfoLog(ID, 512, NULL, &infolog[0]);
 		NG_ERROR("Shader {} (with shaders {} and {}) linking failed: {}. Error raised is {}", ID, vertexPath, fragmentPath, &infolog[0], error);
+	}
+}
+
+Shader::Shader(const uint32_t* vertex, size_t vSize, const uint32_t* fragment, size_t fSize)
+{
+	const GLuint VertexShader = GetShader(vertex, vSize, GL_VERTEX_SHADER);
+	const GLuint FragmentShader = GetShader(fragment, fSize, GL_FRAGMENT_SHADER);
+
+	ID = glCreateProgram();
+
+	glAttachShader(ID, VertexShader);
+	glAttachShader(ID, FragmentShader);
+
+	glLinkProgram(ID);
+
+	GLint succes;
+	glGetProgramiv(ID, GL_LINK_STATUS, &succes);
+
+	if (!succes) {
+		char infolog[512];
+		const GLenum error = glGetError();
+
+		glGetProgramInfoLog(ID, 512, NULL, &infolog[0]);
+		NG_ERROR("Shader {} (with shaders {} and {}) linking failed: {}. Error raised is {}", ID, VertexShader, FragmentShader, &infolog[0], error);
 	}
 }
 

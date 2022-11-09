@@ -4,15 +4,15 @@
 #define ENABLE_BLOOM 1
 #define CORRECT_GAMMA 1
 
-out vec4 fragColor;
+layout (location = 0) out vec4 fragColor;
 
-in vec2 texCoords;
+layout (location = 0) in vec2 texCoords;
 
-uniform sampler2D screen;
+layout (binding = 0) uniform sampler2D screen;
 #if ENABLE_BLOOM
-uniform sampler2D bloomBlur;
+layout (binding = 1) uniform sampler2D bloomBlur;
 
-uniform bool bloom;
+layout (location = 2) uniform bool bloom;
 #endif
 
 void main()

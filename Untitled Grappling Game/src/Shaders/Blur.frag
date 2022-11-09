@@ -1,12 +1,12 @@
 #version 460 core
 
-out vec4 FragColor;
+layout (location = 0) out vec4 FragColor;
 
-in vec2 texCoords;
+layout (location = 0) in vec2 texCoords;
 
-uniform sampler2D image;
+layout (binding=0) uniform sampler2D image;
 
-uniform bool horizontal;
+layout (location = 10) uniform bool horizontal;
 float weight[3] = float[] (0.2270270270, 0.3162162162, 0.0702702703);
 float offset[3] = float[](0.0, 1.3846153846, 3.2307692308);
 

@@ -60,8 +60,8 @@ public:
 
 	MultiMesh& operator=(MultiMesh&& other) noexcept;
 
-	void Add(const std::vector<Vertex>& verts, const AABB& boundingBox, const std::vector<unsigned int>& idxs, std::vector<Texture>&& textures, const glm::vec3& diff = glm::vec3(0.0f), const glm::vec3& spec = glm::vec3(0.0f), bool useTextures = true);
-	void Add(const std::vector<Vertex>& verts, const AABB& boundingBox, const std::vector<unsigned int>& idxs, std::vector<std::shared_future<LoadingTexture*>>&& textures, const glm::vec3& diff = glm::vec3(0.0f), const glm::vec3& spec = glm::vec3(0.0f), bool useTextures = true);
+	void Add(const std::vector<Vertex>& verts, const AABB& boundingBox, const std::vector<unsigned int>& idxs, std::vector<Texture>&& m_Textures, const glm::vec3& diff = glm::vec3(0.0f), const glm::vec3& spec = glm::vec3(0.0f), bool m_UseTextures = true);
+	void Add(const std::vector<Vertex>& verts, const AABB& boundingBox, const std::vector<unsigned int>& idxs, std::vector<std::shared_future<LoadingTexture*>>&& m_Textures, const glm::vec3& diff = glm::vec3(0.0f), const glm::vec3& spec = glm::vec3(0.0f), bool m_UseTextures = true);
 
 	// TODO: make these frustums take from the global camera
 	void Draw(Shader& shader, const Frustum& camFrustum, const Transform& transform, bool setTextures) const;

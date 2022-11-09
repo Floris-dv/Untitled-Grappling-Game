@@ -7,11 +7,6 @@
 
 #include "AABB.h"
 
-#define DEFAULTYAW -90.0f
-#define DEFAULTPITCH 0.0f
-#define DEFAULTSPEED 2.5f
-#define DEFAULTSENSITIVITY 0.1f
-#define DEFAULTFOV 90.0f
 #define SLIPPERYNESS 10.0f
 #define GRAVITY 1.0f
 
@@ -26,6 +21,19 @@ enum class Camera_Movement {
 };
 class Camera
 {
+public:
+	// camera options
+	struct CameraOptions {
+		float MovementSpeed;
+		float MouseSensitivity;
+		float FovY = 90.0f;
+		float ZNear = 0.1f, ZFar = 500.0f;
+
+		float Mass = 80.0f;
+		float Resistance = 100.0f;
+	} Options;
+
+private:
 	static Camera* s_Camera;
 
 	bool m_IsDirty = true;
@@ -34,40 +42,35 @@ class Camera
 	glm::mat4 m_VPMatrix{ 1.0f };
 	Frustum m_Frustum;
 
-	void GenerateEverything();
-
-	// constructor with vectors
-	Camera(float aspect, float znear, float zfar, float mass, glm::vec3 position, glm::vec3 up, float yaw, float pitch);
-
-public:
-	// camera Attributes
-	glm::vec3 m_Position;
-	glm::vec3 m_Front;
 	glm::vec3 m_Up;
 	glm::vec3 m_Right;
 	glm::vec3 m_WorldUp;
-	glm::vec3 m_Vel; // velocity
 	// euler Angles
 	float m_Yaw;
 	float m_Pitch;
-	// camera options
-	float m_MovementSpeed;
-	float m_MouseSensitivity;
-	float m_FovY;
-	float m_Aspect;
-	float m_zNear, m_zFar;
 
-	float m_DMass; // 1/mass
-	float k = 100.0f;
+	void GenerateEverything();
 
-	static void Initialize(float aspect, float znear, float zfar, float mass = 80.0f, glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = DEFAULTYAW, float pitch = DEFAULTPITCH) {
+	// constructor with vectors
+	Camera(CameraOptions options, float aspectRatio, glm::vec3 position, glm::vec3 up, float yaw, float pitch);
+
+public:
+	// camera Attributes
+	glm::vec3 Position;
+	glm::vec3 Front; // READ-ONLY
+	glm::vec3 Vel; // velocity
+
+	float AspectRatio;
+
+
+	static void Initialize(CameraOptions options, float aspectRatio, glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = -90.0f, float pitch = 0.0f) {
 		if (!s_Camera)
-			s_Camera = new Camera(aspect, znear, zfar, mass, position, up, yaw, pitch);
+			s_Camera = new Camera(options, aspectRatio, position, up, yaw, pitch);
 	}
 
-	static void Initialize(float aspect, float znear, float zfar, float mass, float posX, float posY, float posZ, float upX = 0.0f, float upY = 1.0f, float upZ = 0.0f, float yaw = DEFAULTYAW, float pitch = DEFAULTPITCH) {
+	static void Initialize(CameraOptions options, float aspectRatio, float posX, float posY, float posZ, float upX = 0.0f, float upY = 1.0f, float upZ = 0.0f, float yaw = -90.0f, float pitch = 0.0f) {
 		if (!s_Camera)
-			s_Camera = new Camera(aspect, znear, zfar, mass, { posX, posY, posZ }, { upX, upY, upZ }, yaw, pitch);
+			s_Camera = new Camera(options, aspectRatio, { posX, posY, posZ }, { upX, upY, upZ }, yaw, pitch);
 	}
 
 	static Camera& Get() { return *s_Camera; }

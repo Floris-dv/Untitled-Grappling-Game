@@ -23,6 +23,7 @@
 * Make submeshes use a texture atlas
 * Use a renderer (at least to not redundantly set textures the whole time)
 * Make textures in models a unique pointer
+* When #embed is here: use that instead of header files
 */
 /*
 * DONE (for showing in HPG)
