@@ -16,10 +16,10 @@ static std::pair<glm::vec3, glm::vec3> GenerateTanBitan(glm::vec3 pos[3], glm::v
 static void GenerateModelMatricesInRing(const unsigned int amount, glm::mat4* modelMatrices, const float radius, const float displacement);
 
 constexpr std::array<SimpleVertex, 36> boxVertices = { {
-		// Positions				// Normals				// Textue coords
+		// Positions				// Normals				// Texture coords
 		// Front face
 		{{-1.0f, -1.0f,  1.0f},		{0.0f, 0.0f,  1.0f},	{0.0f, 0.0f}},
-		{{ 1.0f, -1.0f,  1.0f},		{0.0f, 0.0f,  1.0f},	{0.0f, 1.0f}},
+		{{ 1.0f, -1.0f,  1.0f},		{0.0f, 0.0f,  1.0f},	{1.0f, 0.0f}},
 		{{ 1.0f,  1.0f,  1.0f},		{0.0f, 0.0f,  1.0f},	{1.0f, 1.0f}},
 		{{ 1.0f,  1.0f,  1.0f},		{0.0f, 0.0f,  1.0f},	{1.0f, 1.0f}},
 		{{-1.0f,  1.0f,  1.0f},		{0.0f, 0.0f,  1.0f},	{0.0f, 1.0f}},

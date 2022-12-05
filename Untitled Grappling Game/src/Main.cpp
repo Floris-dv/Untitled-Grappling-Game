@@ -237,7 +237,7 @@ int main() {
 
 	// uniform buffer(s):
 	// Matrices uniform block is at binding point 0:
-	UniformBuffer matrixUBO(sizeof(glm::mat4) + sizeof(glm::vec3), "Matrices");
+	UniformBuffer matrixUBO(sizeof(glm::mat4) + sizeof(glm::vec4), "Matrices"); // vec4 because of padding
 	{
 		matrixUBO.SetBlock(shader);
 		matrixUBO.SetBlock(asteroidShader);
@@ -352,7 +352,7 @@ int main() {
 
 	Material level1(&asteroidShader, bluePrintTexture);
 
-	Level level({ 10.0f, 10.0f, 10.0f }, { { {0.0f, -20.0f, 0.0f}, {20.0f, 20.0f, 20.0f} } }, level1);
+	Level level({ 10.0f, 10.0f, 10.0f }, { { {0.0f, -20.0f, 0.0f}, {20.0f, 20.0f, 20.0f} } }, &level1);
 	// {
 	// 	BufferLayout bl(5);
 	// 
