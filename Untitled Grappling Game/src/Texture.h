@@ -74,12 +74,4 @@ public:
 	std::vector<Texture> GetTextures(TextureType type = TextureType::unknown);
 };
 
-static std::future<LoadingTexture*> StartLoadingTexture(const std::string& path, TextureType type = TextureType::unknown) {
-	// Path needs to be a copy, else classic 'reference to something that doesn't exist anymore'
-	return std::async(std::launch::async, [](std::string path, TextureType type) {
-		// if it's not heap allocated, the ret_text will delete it's data, and then it's useless	
-		LoadingTexture* t = new LoadingTexture(path, type);
-
-		return t;
-		}, path, type);
-}
+std::future<LoadingTexture*> StartLoadingTexture(const std::string& path, TextureType type = TextureType::unknown);

@@ -212,12 +212,13 @@ int main() {
 
 	Material blueprintMaterial(&textureShader, bluePrintTexture);
 
+	Material skyBoxMaterial(&skyBoxShader, std::vector<Texture>{});
+
 	blueprintMaterial.LoadTextures(true);
 
 	Object<SimpleVertex> blueprintBox(&blueprintMaterial, boxVertices, SimpleVertex::Layout);
 
-
-	Material lightMaterial(&lightShader, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f });
+	Material lightMaterial(&lightShader, { 0.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 0.0f });
 
 	Object<SimpleVertex> box(&lightMaterial, boxVertices, SimpleVertex::Layout);
 
@@ -282,6 +283,7 @@ int main() {
 		asteroidShader.SetFloat("spotLight.cutOff", 0.9762960071199334f);
 		asteroidShader.SetFloat("spotLight.outerCutOff", 0.9659258262890683f);
 		asteroidShader.SetFloat("far_plane", far_plane);
+		asteroidShader.SetFloat("height_scale", 0.1f);
 
 		bloomPassShader.Use();
 		bloomPassShader.SetInt("screen", 0);
@@ -423,6 +425,7 @@ int main() {
 	while (!Window::Get().ShouldClose())
 	{
 		StartFrame();
+		Camera::Get().UpdatePhysics(&level);
 
 		// Set the current framebuffer to the correct one
 		Framebuffers::Bind(Framebuffers::main);
@@ -473,29 +476,17 @@ int main() {
 				glm::mat4 model(1.0f);
 				model = glm::translate(model, pointLightPositions[i]);
 				model = glm::scale(model, glm::vec3(0.1f));
-				lightShader.SetMat4("model", model);
 				lightMaterial.SetColors({ 2.0f, 2.0f, 2.0f }, { 0.0f, 0.0f, 0.0f });
 				// renderer.Draw(box, lightShader);
-				box.Draw(lightShader, false);
+				box.Draw(model, false);
 			}
 		}
 		// draw backpack
 		{
 			Profiler p("backpack drawing");
 
-			shader.Use();
-			// pass transformation matrices to the shader
-			shader.SetVec3("viewPos", Camera::Get().Position);
-			Transform t;
-			t.setLocalScale(glm::vec3{ 5.0f });
-			// render the loaded model
-			shader.SetMat4("model", t.getModelMatrix());
-			asteroidShader.Use();
-			asteroidShader.SetVec3("viewPos", Camera::Get().Position);
-			asteroidShader.SetFloat("height_scale", 0.1f);
-
 			// renderer.IDraw(backpack, asteroidShader, objectPositions.size());
-			backpack.DrawInstanced(asteroidShader, objectPositions.size(), Camera::Get().GetFrustum(), t);
+			backpack.DrawInstanced(asteroidShader, objectPositions.size(), Camera::Get().GetFrustum(), Transform());
 		}
 		// draw the asteroids
 		{
@@ -508,24 +499,10 @@ int main() {
 		// draw the floor
 		{
 			Profiler p("floor drawing");
-
-			shader.Use();
-
-			shader.SetBool("material.useTex", true);
-
-			glm::mat4 model(1.0f);
-
-			shader.SetMat4("model", model);
-			shader.SetVec3("viewPos", Camera::Get().Position);
-			floor.Draw(true);
-
-			textureShader.Use();
-
-			textureShader.SetMat4("model", model);
+			floor.Draw(glm::mat4(1.0f), true);
 
 			// blueprintBox.Draw(true);
-
-			level.Render(asteroidShader);
+			level.Render();
 		}
 		// depth shenanigans: has to happen after everything, but before skybox
 		{
@@ -544,15 +521,9 @@ int main() {
 
 				ImGui::Text("Depth: %f %f %f", spherePos.x, spherePos.y, spherePos.z);
 			}
-
-			lightShader.Use();
-			lightShader.SetMat4("model", glm::mat4(1.0f));
-
-			lightMaterial.SetColors({ 0.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 0.0f });
 			glm::mat4 model(1.0f);
 			model = glm::translate(model, spherePos);
-			lightShader.SetMat4("model", model);
-			sphere.Draw(lightShader, false);
+			sphere.Draw(model, false);
 		}
 
 		// Last, draw the skybox:
@@ -567,10 +538,12 @@ int main() {
 
 			skyBoxShader.SetMat4("ProjunTranslatedView", Camera::Get().GetProjMatrix() * unTranslatedView);
 
+			skyBoxShader.SetInt("skyBox", 0);
+			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_CUBE_MAP, skyBoxTex);
 
 			// renderer.Draw(box, skyBoxShader);
-			box.Draw(skyBoxShader, false);
+			box.Draw(&skyBoxMaterial, {}, false);
 			glDepthFunc(GL_LESS); // set depth function back to default
 
 			glEnable(GL_CULL_FACE);
@@ -581,10 +554,8 @@ int main() {
 		t.setLocalPosition({ 20, 0, 0 });
 		t.setLocalScale(glm::vec3{ 0.01f });
 
-		shader.SetMat4("model", t.getModelMatrix());
-		shader.SetVec3("viewPos", Camera::Get().Position);
 		glm::mat4 MVP = VP;
-		// saber.Draw(shader, Camera::Get().GetFrustum(), t);
+		saber.Draw(shader, Camera::Get().GetFrustum(), t);
 
 #if ENABLE_BLOOM
 		if (bloomToggled)

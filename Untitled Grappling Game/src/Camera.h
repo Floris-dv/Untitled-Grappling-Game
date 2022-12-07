@@ -10,15 +10,19 @@
 #define SLIPPERYNESS 10.0f
 #define GRAVITY 1.0f
 
-enum class Camera_Movement {
+class Level;
+
+enum Camera_Movement : unsigned int {
+	MOVEMENT_NONE = 0,
 	// positive x is to the right:
-	FORWARD,  //  0,  0, -1
-	BACKWARD, //  0,  0,  1
-	LEFT,     // -1,  0, -0
-	RIGHT,	  //  1,  0,  0
-	UP,       //  0,  1, -0
-	DOWN	  //  0, -1,  0
+	MOVEMENT_FORWARD = 1,	//  0,  0, -1
+	MOVEMENT_BACKWARD = 2,	//  0,  0,  1
+	MOVEMENT_LEFT = 4,		// -1,  0, -0
+	MOVEMENT_RIGHT = 8,		//  1,  0,  0
+	MOVEMENT_UP = 16,		//  0,  1, -0
+	MOVEMENT_DOWN = 32		//  0, -1,  0
 };
+
 class Camera
 {
 public:
@@ -62,7 +66,6 @@ public:
 
 	float AspectRatio;
 
-
 	static void Initialize(CameraOptions options, float aspectRatio, glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = -90.0f, float pitch = 0.0f) {
 		if (!s_Camera)
 			s_Camera = new Camera(options, aspectRatio, position, up, yaw, pitch);
@@ -95,4 +98,6 @@ public:
 
 	// calculates the front vector from the Camera's (updated) Euler Angles
 	void UpdateCameraVectors(float deltaTime);
+
+	void UpdatePhysics(Level* level);
 };

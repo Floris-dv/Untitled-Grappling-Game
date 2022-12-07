@@ -35,6 +35,7 @@ bool Model::isFinished() {
 
 	return m_Loading.wait_for(0s) == std::future_status::ready;
 }
+
 std::vector<std::shared_future<LoadingTexture*>> Model::LoadTexturesFromType(const aiMaterial* material, aiTextureType type, TextureType typeName) {
 	std::vector<std::shared_future<LoadingTexture*>> futures;
 
@@ -53,22 +54,7 @@ std::vector<std::shared_future<LoadingTexture*>> Model::LoadTexturesFromType(con
 		memcpy(fname, str.C_Str(), (size_t)str.length + 1);
 
 		if (!skip) {
-			try {
-				futures.push_back(std::async(std::launch::async, [fname, typeName](std::string directory) {
-					std::string filename = directory + '/' + fname;
-
-					// if it's not heap allocated, the ret_text will delete it's data, and then it's useless
-					LoadingTexture* t = new LoadingTexture(filename, typeName);
-					return t;
-					}, m_Directory)
-				);
-			}
-			catch (const std::string& e) {
-				NG_ERROR("{}", e);
-			}
-			catch (const std::exception& e) {
-				NG_ERROR("{}", e.what());
-			}
+			futures.push_back(StartLoadingTexture(m_Directory + fname, typeName));
 		}
 	}
 
@@ -227,7 +213,7 @@ void Model::LoadModel(const std::string& path)
 		NG_ERROR("Assimp error: {} for path {}", importer.GetErrorString(), path);
 		return;
 	}
-	m_Directory = path.substr(0, path.find_last_of('/'));
+	m_Directory = path.substr(0, path.find_last_of('/') + 1); // Want to include the '/'
 
 	ProcessNode(scene->mRootNode, scene);
 }

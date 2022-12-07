@@ -14,16 +14,19 @@ public:
 		inline static Object<SimpleVertex> Object;
 	};
 
-	Level(const glm::vec3& startPlatformSize, const std::vector<Block>& blocks, Material* levelBlocksTheme);
+	Level(const glm::vec3& startPlatformSize, std::vector<Block>&& blocks, Material* levelBlocksTheme);
 
 	// Assumes the MVP-matrix has been set
 	void Render();
 
-	void Render(Shader& shader);
+	void Render(Material* shader);
+
+	const std::vector<Block>& GetBlocks() { return m_Blocks; }
 
 private:
 	glm::vec3 m_StartPlatformSize; // Centered around 0 0 0
 
+	std::vector<Block> m_Blocks;
 	std::vector<glm::mat4> m_Matrices;
 
 	Material* m_Material;

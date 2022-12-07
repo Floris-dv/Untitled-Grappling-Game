@@ -115,9 +115,9 @@ constexpr ChangeResult<N> CleanupOutputString(const char(&expr)[N], const char(&
 #define FUNC_SIG "FUNC_SIG unknown!"
 #endif
 
-#define _PROFILER_SCOPE(name, line) constexpr auto fixedName##line = CleanupOutputString(name, "__cdecl ", "void"); Profiler p##line(fixedName##line.Data)
+#define _PROFILER_SCOPE(name, line) constexpr auto fixedName##line = CleanupOutputString(name, "__cdecl ", "void "); Profiler p##line(fixedName##line.Data)
 #define PROFILE_SCOPE_MAINLOOP(name) _PROFILER_SCOPE(name, __LINE__)
-#define _TIMER_SCOPE(name, line) constexpr auto fixedName##line = CleanupOutputString(name, "__cdecl ", "void"); Timer t##line(fixedName##line.Data)
+#define _TIMER_SCOPE(name, line) constexpr auto fixedName##line = CleanupOutputString(name, "__cdecl ", "void "); Timer t##line(fixedName##line.Data)
 #define PROFILE_SCOPE_ONCE(name) _TIMER_SCOPE(name, __LINE__)
 #define PROFILE_FUNCTION_ONCE() PROFILE_SCOPE_ONCE(FUNC_SIG)
 #else

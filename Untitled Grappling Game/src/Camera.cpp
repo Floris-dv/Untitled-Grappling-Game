@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "Camera.h"
+#include "Level.h"
+#include "imgui/imgui.h"
 
 Camera* Camera::s_Camera;
 
@@ -59,18 +61,16 @@ void Camera::ProcessKeyboard(Camera_Movement direction, float deltaTime)
 {
 	const float velocity = Options.MovementSpeed * deltaTime;
 
-	switch (direction) {
-	case Camera_Movement::FORWARD:
-		Vel += glm::normalize(glm::vec3(Front.x, 0.0f, Front.z)) * velocity; break;
-	case Camera_Movement::BACKWARD:
-		Vel -= glm::normalize(glm::vec3(Front.x, 0.0f, Front.z)) * velocity; break;
-	case Camera_Movement::RIGHT:
-		Vel += glm::normalize(glm::vec3(m_Right.x, 0.0f, m_Right.z)) * velocity; break;
-	case Camera_Movement::LEFT:
-		Vel -= glm::normalize(glm::vec3(m_Right.x, 0.0f, m_Right.z)) * velocity; break;
-	case Camera_Movement::UP:
-		Vel += m_WorldUp * velocity; break;
-	}
+	if (direction & MOVEMENT_FORWARD)
+		Vel += glm::normalize(glm::vec3(Front.x, 0.0f, Front.z)) * velocity;
+	if (direction & MOVEMENT_BACKWARD)
+		Vel -= glm::normalize(glm::vec3(Front.x, 0.0f, Front.z)) * velocity;
+	if (direction & MOVEMENT_RIGHT)
+		Vel += glm::normalize(glm::vec3(m_Right.x, 0.0f, m_Right.z)) * velocity;
+	if (direction & MOVEMENT_LEFT)
+		Vel -= glm::normalize(glm::vec3(m_Right.x, 0.0f, m_Right.z)) * velocity;
+	if (direction & MOVEMENT_UP)
+		Vel += m_WorldUp * velocity;
 }
 
 void Camera::ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch)
@@ -122,13 +122,23 @@ void Camera::UpdateCameraVectors(float deltaTime)
 	Position += Vel * deltaTime * 60.0f;
 
 	// calculate the new Front vector
-	Front.x = cos(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
-	Front.y = sin(glm::radians(m_Pitch));
-	Front.z = sin(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
+	Front.x = glm::cos(glm::radians(m_Yaw)) * glm::cos(glm::radians(m_Pitch));
+	Front.y = glm::sin(glm::radians(m_Pitch));
+	Front.z = glm::sin(glm::radians(m_Yaw)) * glm::cos(glm::radians(m_Pitch));
 	Front = glm::normalize(Front);
 	// also re-calculate the Right and Up vector
 	m_Right = glm::normalize(glm::cross(Front, m_WorldUp));  // normalize the vectors, because their length gets closer to 0 the more you look Up or down which results in slower movement.
 	m_Up = glm::normalize(glm::cross(m_Right, Front));
+}
+
+void Camera::UpdatePhysics(Level* level)
+{
+	for (const Level::Block& block : level->GetBlocks()) {
+		glm::bvec3 s = glm::lessThan(block.Start, Position) && glm::lessThan(Position, block.End);
+		if (glm::all(s)) {
+			ImGui::Text("Inside!");
+		}
+	}
 }
 
 const Frustum& Camera::GetFrustum()

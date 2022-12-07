@@ -46,22 +46,19 @@ float now;
 // different as else you don't get smooth movement, and let diagonal in
 static void updateMovement() {
 	if (ImGui::IsWindowFocused(4) || ImGui::IsAnyItemFocused()) {
-		Camera::Get().UpdateCameraVectors(deltaTime); // high FPS: doesn't matter, low FPS: disables dropping inputs (because friction is too large)
+		Camera::Get().UpdateCameraVectors(deltaTime);
 		return;
 	}
 
-	if (Window::Get().GetKeyPressed(KEY_W) || Window::Get().GetKeyPressed(KEY_UP))
-		Camera::Get().ProcessKeyboard(Camera_Movement::FORWARD, deltaTime);
-	if (Window::Get().GetKeyPressed(KEY_A) || Window::Get().GetKeyPressed(KEY_LEFT))
-		Camera::Get().ProcessKeyboard(Camera_Movement::LEFT, deltaTime);
-	if (Window::Get().GetKeyPressed(KEY_S) || Window::Get().GetKeyPressed(KEY_DOWN))
-		Camera::Get().ProcessKeyboard(Camera_Movement::BACKWARD, deltaTime);
-	if (Window::Get().GetKeyPressed(KEY_D) || Window::Get().GetKeyPressed(KEY_RIGHT))
-		Camera::Get().ProcessKeyboard(Camera_Movement::RIGHT, deltaTime);
-	if (Window::Get().GetKeyPressed(KEY_SPACE))
-		Camera::Get().ProcessKeyboard(Camera_Movement::UP, deltaTime);
+	unsigned int movement = MOVEMENT_NONE;
+	movement |= (Window::Get().GetKeyPressed(KEY_W) || Window::Get().GetKeyPressed(KEY_UP)) * MOVEMENT_FORWARD;
+	movement |= (Window::Get().GetKeyPressed(KEY_A) || Window::Get().GetKeyPressed(KEY_LEFT)) * MOVEMENT_LEFT;
+	movement |= (Window::Get().GetKeyPressed(KEY_S) || Window::Get().GetKeyPressed(KEY_DOWN)) * MOVEMENT_BACKWARD;
+	movement |= (Window::Get().GetKeyPressed(KEY_D) || Window::Get().GetKeyPressed(KEY_RIGHT)) * MOVEMENT_RIGHT;
+	movement |= Window::Get().GetKeyPressed(KEY_SPACE) * MOVEMENT_UP;
 
-	Camera::Get().UpdateCameraVectors(deltaTime); // high FPS: doesn't matter, low FPS: disables dropping inputs (because friction is too large)
+	Camera::Get().ProcessKeyboard((Camera_Movement)movement, deltaTime);
+	Camera::Get().UpdateCameraVectors(deltaTime);
 
 	return;
 }
@@ -128,7 +125,7 @@ void Setup() {
 
 	// Shadows::Setup();
 
-	Camera::Initialize({2.5f, 0.1f}, (float)Window::Get().GetWidth() / (float)Window::Get().GetHeight());
+	Camera::Initialize({ 2.5f, 0.1f }, (float)Window::Get().GetWidth() / (float)Window::Get().GetHeight());
 }
 
 void Destroy() {
@@ -161,6 +158,7 @@ void StartFrame() {
 
 	ImGui::DragFloat("Resistance", &Camera::Get().Options.Resistance, 0.01f, 0.0f, 25.0f);
 	updateMovement();
+
 }
 
 void EndFrame() {

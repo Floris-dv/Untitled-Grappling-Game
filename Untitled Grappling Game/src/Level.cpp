@@ -2,16 +2,20 @@
 #include "Level.h"
 #include "VertexData.h"
 
-Level::Level(const glm::vec3& startPlatformSize, const std::vector<Block>& blocks, Material* levelBlocksTheme) : m_StartPlatformSize(startPlatformSize), m_Material(levelBlocksTheme)
+Level::Level(const glm::vec3& startPlatformSize, std::vector<Block>&& blocks, Material* levelBlocksTheme) : m_StartPlatformSize(startPlatformSize), m_Blocks(std::move(blocks)), m_Material(levelBlocksTheme)
 {
 	std::vector<glm::mat4> matrices;
-	m_Matrices.reserve(blocks.size());
+	m_Matrices.reserve(m_Blocks.size());
 
-	for (const Block& block : blocks) {
+	for (Block& block : m_Blocks) {
 		glm::mat4 matrix(1.0f);
 
-		matrix = glm::translate(matrix, block.Start);
-		matrix = glm::scale(matrix, glm::abs(block.End - block.Start));
+		glm::vec3 start = block.Start;
+		block.Start = glm::min(start, block.End);
+		block.End = glm::max(start, block.End);
+
+		// Extra factors are for help with that boxVertices are -1 to 1 instead of 0-1
+		matrix *= glm::scale(glm::translate(glm::mat4(1.0f), 0.5f * (block.Start + block.End)), (block.End - block.Start) * 0.5f);
 
 		m_Matrices.push_back(matrix);
 	}
@@ -31,6 +35,6 @@ void Level::Render()
 	Block::Object.DrawInstanced(true, m_Matrices.size());
 }
 
-void Level::Render(Shader& shader) {
-	Block::Object.DrawInstanced(shader, true, m_Matrices.size());
+void Level::Render(Material* material) {
+	Block::Object.DrawInstanced(material, true, m_Matrices.size());
 }

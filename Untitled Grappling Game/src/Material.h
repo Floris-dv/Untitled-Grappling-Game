@@ -24,7 +24,18 @@ public:
 
 	void SetColors(const glm::vec3& diff, const glm::vec3& spec);
 	void LoadTextures(bool deleteData);
-	void Load(bool setTextures);
-	void Load(Shader& shader, bool setTextures);
+	void Load() { Load(*m_Shader); }
+	void Load(Shader& shader);
+
+	Shader* GetShader() { return m_Shader; };
+
 	~Material() noexcept;
 };
+
+#define LoadMaterial(material, setTextures, ...) do{ \
+	if (setTextures) (material)->Load(__VA_ARGS__); \
+	else {\
+		(material)->GetShader()->Use(); \
+		(material)->GetShader()->SetBool("material.useTex", false);\
+	}} while(false)
+

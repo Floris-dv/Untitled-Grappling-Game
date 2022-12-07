@@ -98,7 +98,7 @@ struct LayoutElement {
 		case GL_UNSIGNED_BYTE:
 			return sizeof(GLubyte) * Count;
 		default:
-			return 1000000;
+			return -1;
 		}
 	}
 };

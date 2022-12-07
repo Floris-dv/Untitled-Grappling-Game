@@ -45,13 +45,13 @@ public:
 
 	Object(Material* material, const std::vector<T>& vertices, const BufferLayout& bufferLayout);
 
-	virtual void Draw(bool setTextures);
+	void Draw(const glm::mat4& modelMatrix, bool setMaterial) { Draw(m_Material, modelMatrix, setMaterial); }
 
-	virtual void Draw(Shader& shader, bool setTextures);
+	virtual void Draw(Material* material, const glm::mat4& modelMatrix, bool setMaterial);
 
-	virtual void DrawInstanced(bool setTextures, unsigned int count);
+	void DrawInstanced(bool setMaterial, unsigned int count) { DrawInstanced(m_Material, setMaterial, count); }
 
-	virtual void DrawInstanced(Shader& shader, bool setTextures, unsigned int count);
+	virtual void DrawInstanced(Material* material, bool setMaterial, unsigned int count);
 
 	virtual void SetInstanceBuffer(const VertexBuffer& instanceBuffer);
 
@@ -81,25 +81,6 @@ Object<T>::Object(Material* material, const std::vector<T>& vertices, const Buff
 }
 
 template<typename T>
-inline void Object<T>::Draw(bool setTextures)
-{
-	if (!m_NumVerts)
-		return;
-
-	m_Material->Load(setTextures);
-
-	VAO.Bind();
-	if (m_UseIBO)
-		glDrawElements(GL_TRIANGLES, m_NumVerts, GL_UNSIGNED_INT, (void*)0);
-	else
-		glDrawArrays(GL_TRIANGLES, 0, m_NumVerts);
-
-	VAO.UnBind();
-
-	glActiveTexture(GL_TEXTURE0);
-}
-
-template<typename T>
 Object<T>::Object(Material* material, const std::vector<T>& vertices, const BufferLayout& bufferLayout, const std::vector<GLuint>& indices)
 	: m_Material(material), m_UseIBO(true),
 	m_VBO(vertices.size() * sizeof(T), vertices.data()),
@@ -111,11 +92,13 @@ Object<T>::Object(Material* material, const std::vector<T>& vertices, const Buff
 }
 
 template<typename T>
-void Object<T>::Draw(Shader& shader, bool setTextures) {
+void Object<T>::Draw(Material* material, const glm::mat4& modelMatrix, bool setMaterial) {
 	if (!m_NumVerts)
 		return;
 
-	m_Material->Load(shader, setTextures);
+	LoadMaterial(material, setMaterial);
+
+	material->GetShader()->SetMat4("model", modelMatrix);
 
 	VAO.Bind();
 	if (m_UseIBO)
@@ -124,17 +107,15 @@ void Object<T>::Draw(Shader& shader, bool setTextures) {
 		glDrawArrays(GL_TRIANGLES, 0, m_NumVerts);
 
 	VAO.UnBind();
-
-	glActiveTexture(GL_TEXTURE0);
 }
 
 template<typename T>
-void Object<T>::DrawInstanced(Shader& shader, bool setTextures, unsigned int count)
+void Object<T>::DrawInstanced(Material* material, bool setMaterial, unsigned int count)
 {
 	if (!m_NumVerts)
 		return;
 
-	m_Material->Load(shader, setTextures);
+	LoadMaterial(material, setMaterial);
 
 	VAO.Bind();
 	if (m_UseIBO)
@@ -143,28 +124,6 @@ void Object<T>::DrawInstanced(Shader& shader, bool setTextures, unsigned int cou
 		glDrawArraysInstanced(GL_TRIANGLES, 0, m_NumVerts, count);
 
 	VAO.UnBind();
-
-	glActiveTexture(GL_TEXTURE0);
-}
-
-
-template<typename T>
-void Object<T>::DrawInstanced(bool setTextures, unsigned int count)
-{
-	if (!m_NumVerts)
-		return;
-
-	m_Material->Load(setTextures);
-
-	VAO.Bind();
-	if (m_UseIBO)
-		glDrawElementsInstanced(GL_TRIANGLES, m_NumVerts, GL_UNSIGNED_INT, (void*)0, count);
-	else
-		glDrawArraysInstanced(GL_TRIANGLES, 0, m_NumVerts, count);
-
-	VAO.UnBind();
-
-	glActiveTexture(GL_TEXTURE0);
 }
 
 template<typename T>

@@ -121,3 +121,21 @@ std::vector<Texture> LoadingTextures::GetTextures(TextureType type) {
 
 	return Textures;
 }
+
+std::future<LoadingTexture*> StartLoadingTexture(const std::string& path, TextureType type) {
+	// Path needs to be a copy, else classic 'reference to something that doesn't exist anymore'
+	return std::async(std::launch::async, [](const std::string path, TextureType type) {
+		// if it's not heap allocated, LoadingTexture will delete it's data, and then it's useless
+		try {
+			LoadingTexture* t = new LoadingTexture(path, type);
+			return t;
+		}
+		catch (const std::string& e) {
+			NG_ERROR("{}", e);
+		}
+		catch (const std::exception& e) {
+			NG_ERROR("{}", e.what());
+		}
+		return (LoadingTexture*)nullptr; // To help the type deducing
+		}, path, type);
+}

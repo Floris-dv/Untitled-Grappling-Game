@@ -43,82 +43,44 @@ void Material::LoadTextures(bool deleteData)
 		m_LoadingTextures.clear();
 }
 
-void Material::Load(bool setTextures)
-{
-	m_Shader->Use();
-	unsigned int diffuseNr = 0, specularNr = 0, normalNr = 0, heightNr = 0;
-
-	if (m_UseTextures && setTextures) {
-		for (int i = 0; i < m_Textures.size(); i++) {
-			std::string number;
-			TextureType type = m_Textures[i].Type;
-
-			switch (type) {
-			case TextureType::diffuse:
-				number = std::to_string(diffuseNr++);
-				break;
-			case TextureType::specular:
-				number = std::to_string(specularNr++); // transfer unsigned int to stream
-				break;
-			case TextureType::normal:
-				number = std::to_string(normalNr++); // transfer unsigned int to stream
-				break;
-			case TextureType::height:
-				number = std::to_string(heightNr++); // transfer unsigned int to stream
-				break;
-			default:
-				throw "ERROR: Texture type is not defined\n";
-			}
-
-			m_Shader->SetInt((names[(int)type] + number).c_str(), i);
-			glBindTextureUnit(i, m_Textures[i].ID);
-		}
-	}
-	else if (setTextures) {
-		m_Shader->SetVec3("material.diff0", m_Diffuse);
-		m_Shader->SetVec3("material.spec0", m_Specular);
-	}
-
-	m_Shader->SetBool("material.useTex", setTextures && m_UseTextures);
-}
-
-void Material::Load(Shader& shader, bool setTextures)
+void Material::Load(Shader& shader)
 {
 	shader.Use();
-	unsigned int diffuseNr = 0, specularNr = 0, normalNr = 0, heightNr = 0;
+	shader.SetBool("material.useTex", m_UseTextures);
 
-	if (m_UseTextures && setTextures) {
-		for (int i = 0; i < m_Textures.size(); i++) {
-			std::string number;
-			TextureType type = m_Textures[i].Type;
-
-			switch (type) {
-			case TextureType::diffuse:
-				number = std::to_string(diffuseNr++);
-				break;
-			case TextureType::specular:
-				number = std::to_string(specularNr++); // transfer unsigned int to stream
-				break;
-			case TextureType::normal:
-				number = std::to_string(normalNr++); // transfer unsigned int to stream
-				break;
-			case TextureType::height:
-				number = std::to_string(heightNr++); // transfer unsigned int to stream
-				break;
-			default:
-				throw "ERROR: Texture type is not defined\n";
-			}
-
-			shader.SetInt((names[(int)type] + number).c_str(), i);
-			glBindTextureUnit(i, m_Textures[i].ID);
-		}
-	}
-	else if (setTextures) {
+	if (!m_UseTextures) {
 		shader.SetVec3("material.diff0", m_Diffuse);
 		shader.SetVec3("material.spec0", m_Specular);
+
+		return;
 	}
 
-	shader.SetBool("material.useTex", setTextures && m_UseTextures);
+	unsigned int diffuseNr = 0, specularNr = 0, normalNr = 0, heightNr = 0;
+
+	for (int i = 0; i < m_Textures.size(); i++) {
+		std::string number;
+		TextureType type = m_Textures[i].Type;
+
+		switch (type) {
+		case TextureType::diffuse:
+			number = std::to_string(diffuseNr++);
+			break;
+		case TextureType::specular:
+			number = std::to_string(specularNr++); // transfer unsigned int to stream
+			break;
+		case TextureType::normal:
+			number = std::to_string(normalNr++); // transfer unsigned int to stream
+			break;
+		case TextureType::height:
+			number = std::to_string(heightNr++); // transfer unsigned int to stream
+			break;
+		default:
+			throw "ERROR: Texture type is not defined\n";
+		}
+
+		shader.SetInt((names[(int)type] + number).c_str(), i);
+		glBindTextureUnit(i, m_Textures[i].ID);
+	}
 }
 
 Material::~Material() noexcept
