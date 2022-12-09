@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "Log.h"
 
 #include "Model.h"
 #include "Timer.h"
@@ -13,7 +14,6 @@
 #pragma warning(pop)
 
 #include <DebugBreak.h>
-#include "Log.h"
 
 // helper functions:
 #if QUICK_LOADING

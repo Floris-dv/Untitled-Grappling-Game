@@ -1,7 +1,7 @@
 #pragma once
-#include <glad/glad.h>
 #include "Shader.h"
 #include <glm/glm.hpp>
+#include <glad/glad.h>
 
 class VertexBuffer
 {

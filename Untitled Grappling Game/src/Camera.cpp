@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Camera.h"
 #include "Level.h"
-#include "imgui/imgui.h"
 
 Camera* Camera::s_Camera;
 
@@ -105,18 +104,24 @@ void Camera::UpdateCameraVectors(float deltaTime)
 {
 	m_IsDirty = true;
 
-	Vel.x *= glm::pow(0.97f, deltaTime * Options.Resistance);
+	if (!m_GrapplingHook.Active()) {
+		Vel.x *= glm::pow(0.97f, deltaTime * Options.AirResistance);
+		Vel.z *= glm::pow(0.97f, deltaTime * Options.AirResistance);
+	}
+	else {
+		Vel.x *= glm::pow(0.97f, deltaTime * Options.Resistance);
+		Vel.z *= glm::pow(0.97f, deltaTime * Options.Resistance);
+	}
 
-	// if Vel.z > 0: subtracts from it: else: adds to it
-	Vel.z *= glm::pow(0.97f, deltaTime * Options.Resistance);
-
-	if (Position.y < 0) {
+	if (Position.y < 0 && !m_GrapplingHook.Active()) {
 		// reset the m_Position and Vel
 		Position.y = 0;
 		Vel.y = 0;
 	}
 	else if (Vel.y != 0)
 		Vel.y -= GRAVITY * deltaTime;
+
+	Vel += m_GrapplingHook.Update(Position) / Options.Mass;
 
 	// update m_Position
 	Position += Vel * deltaTime * 60.0f;
@@ -129,16 +134,6 @@ void Camera::UpdateCameraVectors(float deltaTime)
 	// also re-calculate the Right and Up vector
 	m_Right = glm::normalize(glm::cross(Front, m_WorldUp));  // normalize the vectors, because their length gets closer to 0 the more you look Up or down which results in slower movement.
 	m_Up = glm::normalize(glm::cross(m_Right, Front));
-}
-
-void Camera::UpdatePhysics(Level* level)
-{
-	for (const Level::Block& block : level->GetBlocks()) {
-		glm::bvec3 s = glm::lessThan(block.Start, Position) && glm::lessThan(Position, block.End);
-		if (glm::all(s)) {
-			ImGui::Text("Inside!");
-		}
-	}
 }
 
 const Frustum& Camera::GetFrustum()

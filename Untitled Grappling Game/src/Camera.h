@@ -1,16 +1,12 @@
 #pragma once
 
-#include <glad/glad.h>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/vec_swizzle.hpp>
+#include "GrapplingHook.h"
 
 #include "AABB.h"
 
 #define SLIPPERYNESS 10.0f
 #define GRAVITY 1.0f
-
-class Level;
 
 enum Camera_Movement : unsigned int {
 	MOVEMENT_NONE = 0,
@@ -35,6 +31,7 @@ public:
 
 		float Mass = 80.0f;
 		float Resistance = 100.0f;
+		float AirResistance = 50.0f;
 	} Options;
 
 private:
@@ -63,6 +60,8 @@ public:
 	glm::vec3 Position;
 	glm::vec3 Front; // READ-ONLY
 	glm::vec3 Vel; // velocity
+
+	GrapplingHook m_GrapplingHook;
 
 	float AspectRatio;
 
@@ -98,6 +97,4 @@ public:
 
 	// calculates the front vector from the Camera's (updated) Euler Angles
 	void UpdateCameraVectors(float deltaTime);
-
-	void UpdatePhysics(Level* level);
 };

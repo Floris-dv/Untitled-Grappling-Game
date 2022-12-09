@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "Log.h" // Before everything else because it includes minwindef.h, and that redefines the APIENTRY macro, and all other files have a check with #ifndef APIENTRY
 
 // OpenGL
 #include <glad/glad.h>
@@ -20,7 +21,6 @@
 
 #include <DebugBreak.h>
 
-#include "Log.h"
 
 #include "Timer.h"
 
@@ -125,7 +125,7 @@ void Setup() {
 
 	// Shadows::Setup();
 
-	Camera::Initialize({ 2.5f, 0.1f }, (float)Window::Get().GetWidth() / (float)Window::Get().GetHeight());
+	Camera::Initialize(Camera::CameraOptions{ 2.5f, 0.1f, 90.0f, 0.1f, 500.0f, 200.0f }, (float)Window::Get().GetWidth() / (float)Window::Get().GetHeight());
 }
 
 void Destroy() {

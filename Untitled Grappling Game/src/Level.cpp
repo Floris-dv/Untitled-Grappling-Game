@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Level.h"
 #include "VertexData.h"
+#include "imgui/imgui.h"
+#include <glm/glm.hpp>
 
 Level::Level(const glm::vec3& startPlatformSize, std::vector<Block>&& blocks, Material* levelBlocksTheme) : m_StartPlatformSize(startPlatformSize), m_Blocks(std::move(blocks)), m_Material(levelBlocksTheme)
 {
@@ -37,4 +39,14 @@ void Level::Render()
 
 void Level::Render(Material* material) {
 	Block::Object.DrawInstanced(material, true, m_Matrices.size());
+}
+
+void Level::UpdatePhysics(Camera& camera)
+{
+	for (const Level::Block& block : m_Blocks) {
+		glm::bvec3 s = glm::lessThan(block.Start, camera.Position) && glm::lessThan(camera.Position, block.End);
+		if (glm::all(s)) {
+			ImGui::Text("Inside!");
+		}
+	}
 }

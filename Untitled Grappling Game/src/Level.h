@@ -3,6 +3,7 @@
 #include "Material.h"
 #include "DataBuffers.h"
 #include "Object.h"
+#include "Camera.h"
 
 class Level
 {
@@ -22,6 +23,8 @@ public:
 	void Render(Material* shader);
 
 	const std::vector<Block>& GetBlocks() { return m_Blocks; }
+
+	void UpdatePhysics(Camera& camera);
 
 private:
 	glm::vec3 m_StartPlatformSize; // Centered around 0 0 0

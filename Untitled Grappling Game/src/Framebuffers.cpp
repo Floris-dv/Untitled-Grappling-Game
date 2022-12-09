@@ -1,6 +1,6 @@
 #include "pch.h"
-#include "Settings.h"
 #include "Log.h"
+#include "Settings.h"
 #include "Timer.h"
 #include "Framebuffers.h"
 
@@ -13,7 +13,7 @@
 #include "Camera.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/integer.hpp>
+#include <glm/gtx/integer.hpp> // glm::log2 for integers
 
 namespace Framebuffers {
 	static GLuint bound = 0;
@@ -91,7 +91,7 @@ namespace Framebuffers {
 		bloomTexSize = glm::ivec2(Window::Get().GetWidth(), Window::Get().GetHeight()) / 2;
 		bloomTexSize += glm::ivec2(16 - (bloomTexSize.x % 16), 16 - (bloomTexSize.y % 16));
 
-		bloomMipCount = (unsigned int)glm::log2(glm::min(Window::Get().GetWidth(), Window::Get().GetHeight())) - 4; // don't want mips of like 1x1
+		bloomMipCount = glm::log2(glm::min(Window::Get().GetWidth(), Window::Get().GetHeight())) - 4; // don't want mips of like 1x1
 	}
 
 	void size_callback(uint32_t width, uint32_t height) noexcept;

@@ -1,15 +1,15 @@
 #include "pch.h"
+#include "Log.h"
 #include "Shader.h"
 
 #include <DebugBreak.h>
-#include "Log.h"
 
 #include <glad/glad.h>
 
 /*
 * Shader Format:
 * Vertex in:
-*	0 Pos (vec3) 
+*	0 Pos (vec3)
 *	1 Normal (vec3)
 *	2 TexCoords (vec2)
 *	3 Tangent (vec3)
@@ -19,7 +19,7 @@
 * Uniforms:
 *	Uniform Buffer binding:
 *		0 Matrices (for now VP matrix & viewPos)
-*		1 Lights 
+*		1 Lights
 *	Uniforms:
 *		0 Model
 *		1 Vertex miscelanious
@@ -37,7 +37,7 @@ static GLuint GetShader(const std::string& filename, GLenum type) {
 	if (filename.empty())
 		return 0;
 
-	if (s_ShaderCache.contains(filename)) 
+	if (s_ShaderCache.contains(filename))
 		return s_ShaderCache[filename];
 
 	// Read the file

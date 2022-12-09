@@ -15,6 +15,8 @@ class Material
 	bool m_OpenGLPrepared;
 
 public:
+	Material() = default;
+
 	Material(Shader* shader, const std::vector<Texture>& texs) noexcept;
 	Material(Shader* shader, std::vector<Texture>&& texs) noexcept;
 	Material(Shader* shader, std::vector<std::shared_future<LoadingTexture*>>&& loadingTexs) noexcept;

@@ -1,6 +1,5 @@
 #include "pch.h"
-// OpenGL
-#include <glad/glad.h>
+#include "Log.h" // Before because it includes minwindef.h, and that redefines the APIENTRY macro, and all other files have a check with #ifndef APIENTRY
 
 // Data file:
 #include "VertexData.h"
@@ -26,7 +25,6 @@
 #include "Settings.h"
 #include "Setup.h"
 #include "Object.h"
-#include "Log.h"
 #include "Window.h"
 #include "Level.h"
 
@@ -38,6 +36,8 @@
 #include <DebugBreak.h>
 
 // #include "Renderer.h"
+// OpenGL
+#include <glad/glad.h>
 
 extern float now;
 
@@ -229,13 +229,6 @@ int main() {
 		sphere = Object(&lightMaterial, std::move(vertices), MinimalVertex::Layout, std::move(indices));
 	}
 
-	Object<MinimalVertex> map;
-	{
-		Timer t("Generating the mesh");
-		auto mapVertices = GenerateMesh(200, 10, 200);
-		map = Object(&lightMaterial, std::move(mapVertices), MinimalVertex::Layout);
-	}
-
 	// uniform buffer(s):
 	// Matrices uniform block is at binding point 0:
 	UniformBuffer matrixUBO(sizeof(glm::mat4) + sizeof(glm::vec4), "Matrices"); // vec4 because of padding
@@ -364,7 +357,7 @@ int main() {
 	// 	level.m_VAO.AddBuffer(level.m_InstanceVBO, bl);
 	// }
 
-	// only when everything is set up, do this:
+		// only when everything is set up, do this:
 	Window::Get().Maximize();
 
 	// capture the mouse: hide it and set it to the center of the screen
@@ -425,7 +418,7 @@ int main() {
 	while (!Window::Get().ShouldClose())
 	{
 		StartFrame();
-		Camera::Get().UpdatePhysics(&level);
+		level.UpdatePhysics(Camera::Get());
 
 		// Set the current framebuffer to the correct one
 		Framebuffers::Bind(Framebuffers::main);
@@ -506,7 +499,6 @@ int main() {
 		}
 		// depth shenanigans: has to happen after everything, but before skybox
 		{
-
 			float depth;
 			// After everything:
 			if (Window::Get().GetMouseButtonDown(1)) {
@@ -519,8 +511,12 @@ int main() {
 
 				spherePos = Camera::Get().Position + Camera::Get().Front * zView;
 
-				ImGui::Text("Depth: %f %f %f", spherePos.x, spherePos.y, spherePos.z);
+				if (zView < 200.0f)
+					Camera::Get().m_GrapplingHook.Launch(spherePos);
 			}
+			else
+				Camera::Get().m_GrapplingHook.Release();
+
 			glm::mat4 model(1.0f);
 			model = glm::translate(model, spherePos);
 			sphere.Draw(model, false);
