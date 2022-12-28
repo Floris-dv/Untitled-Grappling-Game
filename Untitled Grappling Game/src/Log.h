@@ -11,6 +11,10 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/string_cast.hpp"
 
+#ifndef OVERLOAD
+#define OVERLOAD 1
+#endif
+
 class Log
 {
 public:
@@ -22,6 +26,7 @@ private:
 	static std::shared_ptr<spdlog::logger> s_Logger;
 };
 
+#if OVERLOAD
 template<typename OStream, glm::length_t L, typename T, glm::qualifier Q>
 inline OStream& operator<<(OStream& os, const glm::vec<L, T, Q>& vector)
 {
@@ -39,6 +44,7 @@ inline OStream& operator<<(OStream& os, glm::qua<T, Q> quaternion)
 {
 	return os << glm::to_string(quaternion);
 }
+#endif
 
 // Logger macros, prefix to avoid name collisions, Neon Grappler
 #define NG_TRACE(...)         ::Log::GetLogger()->log(spdlog::source_loc{__FILE__, __LINE__, __func__}, spdlog::level::trace, __VA_ARGS__)

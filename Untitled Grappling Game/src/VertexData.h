@@ -11,8 +11,6 @@ static std::pair<std::vector<MinimalVertex>, std::vector<unsigned int>> CreateSp
 // Perlin noise with marching cubes mesh generation
 std::vector<MinimalVertex> GenerateMesh(int xSize, int ySize, int zSize);
 
-static std::pair<glm::vec3, glm::vec3> GenerateTanBitan(glm::vec3 pos[3], glm::vec2 uv[3], glm::vec3 nm);
-
 static void GenerateModelMatricesInRing(const unsigned int amount, glm::mat4* modelMatrices, const float radius, const float displacement);
 
 constexpr std::array<SimpleVertex, 36> boxVertices = { {
@@ -123,10 +121,9 @@ constexpr std::array<float, 120> lightData = { {
 		// Spotlight:
 		0.0f, 0.0f, 3.0f,		0.0f,	// position (+ padding)
 		0.0f, 0.0f, -1.0f,		0.0f,	// direction (+ padding)
-
 		0.0f, 0.0f, 0.0f,		0.0f,	// ambient (+ padding)
 		10.0f, 10.0f, 10.0f,	0.0f,	// diffuse (+ padding)
-		1.0f, 1.0f, 1.0f,		0.0f,	// specular (+ padding)
+		2.0f, 2.0f, 2.0f,		0.0f,	// specular (+ padding)
 
 		0.09f,							// linear
 		0.032f,							// quadratic

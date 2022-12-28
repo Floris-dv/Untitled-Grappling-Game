@@ -156,7 +156,6 @@ void StartFrame() {
 
 	ImGui::Text("Starting frame: %f", deltaTime);
 
-	ImGui::DragFloat("Resistance", &Camera::Get().Options.Resistance, 0.01f, 0.0f, 25.0f);
 	updateMovement();
 
 }

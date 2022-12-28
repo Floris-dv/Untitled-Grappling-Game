@@ -28,7 +28,8 @@ struct Material {
     vec3 diff0;
     vec3 spec0;
 
-    bool useTex;
+    bool diffspecTex;
+    bool normalMapping;
 };
 
 struct DirLight {   // offset: total size = 64
@@ -83,8 +84,8 @@ layout (location = 0) in VS_TO_FS {
 layout (binding = 0) uniform samplerCube skyBox;
 
 layout (location = 2) uniform Material material;
-layout (location = 12) uniform float far_plane;
-layout (location = 13) uniform float height_scale; // the scaling of the parallex mapping
+layout (location = 13) uniform float far_plane;
+layout (location = 14) uniform float height_scale; // the scaling of the parallex mapping
 
 #define numPointLights 4
 
@@ -95,7 +96,7 @@ layout (std140, binding = 1) uniform Lights {
     // total: 480 bytes, = 124 floats
 };
 
-layout (location = 10) uniform simpleSpotLight spotLight; 
+layout (location = 11) uniform simpleSpotLight spotLight; 
 
 // global values
 vec2 texCoords;
@@ -267,27 +268,29 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
 
 void main() 
 {
+    texCoords = fs_in.TexCoords;
 #if USE_PARALLEX_MAPPING
-    // offset texture coords with parallex mapping:
-    texCoords = fs_in.TexCoords;
-    texCoords = ParallaxMapping(texCoords, fs_in.ViewDir);
-    // there sometimes are weird border artifacts, as the texcoords can sample outside of the range [0,1], solution: discard it then
-    if(texCoords.x > 1.0 || texCoords.y > 1.0 || texCoords.x < 0.0 || texCoords.y < 0.0)
-        discard;
-#else
-    texCoords = fs_in.TexCoords;
+    if (material.normalMapping) {
+        // offset texture coords with parallex mapping:
+        texCoords = ParallaxMapping(texCoords, fs_in.ViewDir);
+        // there sometimes are weird border artifacts, as the texcoords can sample outside of the range [0,1], solution: discard it then
+        if(texCoords.x > 1.0 || texCoords.y > 1.0 || texCoords.x < 0.0 || texCoords.y < 0.0)
+            discard;
+    }
 #endif
-#if USE_NORMAL_MAPPING
-    // retrieve normal from normal map in range [0,1]
-    normal = texture(material.normal0, texCoords).rgb;
+    if (material.normalMapping) {
+        // retrieve normal from normal map in range [0,1]
+        normal = texture(material.normal0, texCoords).rgb;
 
-    // transform normal vector to range [-1, 1]
-    normal = normal * 2.0 - 1.0;
-    normal = normalize(fs_in.TBN * normal);
-#else
-    normal = fs_in.Normal;
-#endif
-    if (material.useTex) {
+        // transform normal vector to range [-1, 1]
+        normal = normal * 2.0 - 1.0;
+        normal = normalize(fs_in.TBN * normal);
+    }
+    else {
+        normal = fs_in.Normal;
+    }
+
+    if (material.diffspecTex) {
         diffuseTex = vec3(texture(material.diffuse0, texCoords));
         specularTex = vec3(texture(material.specular0, texCoords));
     }

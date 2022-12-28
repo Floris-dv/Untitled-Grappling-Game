@@ -31,11 +31,11 @@ public:
 
 		float Mass = 80.0f;
 		float Resistance = 100.0f;
-		float AirResistance = 50.0f;
+		float AirResistance = 0.0f;
 	} Options;
 
 private:
-	static Camera* s_Camera;
+	inline static Camera* s_Camera;
 
 	bool m_IsDirty = true;
 	glm::mat4 m_ProjMatrix{ 1.0f };
@@ -58,6 +58,8 @@ private:
 public:
 	// camera Attributes
 	glm::vec3 Position;
+#define PHYSICSOFFSET 0.5f
+	glm::vec3 PhysicsPosition; // Is PHYSICSOFFSET units below Position
 	glm::vec3 Front; // READ-ONLY
 	glm::vec3 Vel; // velocity
 

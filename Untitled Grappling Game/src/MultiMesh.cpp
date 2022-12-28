@@ -62,14 +62,15 @@ void MultiMesh::Add(const std::vector<Vertex>& verts, const AABB& boundingBox, c
 	sm.BoundingBox = boundingBox;
 	m_Meshes.push_back(std::move(sm));
 
+	size_t vertexOffset = m_Vertices.size();
+
 	m_Vertices.insert(m_Vertices.end(), verts.begin(), verts.end());
 
 	m_Indices.reserve(m_Indices.size() + idxs.size());
 
 	// correct indices, as they are calculated with the new vertices in mind
-	size_t s = m_Vertices.size() - verts.size();
 	for (int i = 0; i < idxs.size(); i++) {
-		m_Indices.push_back(idxs[i] + s);
+		m_Indices.push_back(idxs[i] + vertexOffset);
 	}
 }
 
@@ -164,7 +165,7 @@ void MultiMesh::SubMesh::Render(Shader& shader, bool setTextures) const
 	if (setTextures)
 		SetTextures(shader);
 
-	shader.SetBool("material.useTex", setTextures && UseTextures);
+	shader.SetBool("material.diffspecTex", setTextures && UseTextures);
 
 	Parent->VAO.Bind();
 	glDrawElements(GL_TRIANGLES, IndexCount, GL_UNSIGNED_INT, (void*)(IndexOffset * sizeof(unsigned int)));
@@ -178,7 +179,7 @@ void MultiMesh::SubMesh::Render(Shader& shader, bool setTextures, unsigned int c
 	if (setTextures)
 		SetTextures(shader);
 
-	shader.SetBool("material.useTex", setTextures && UseTextures);
+	shader.SetBool("material.diffspecTex", setTextures && UseTextures);
 
 	Parent->VAO.Bind();
 	glDrawElementsInstanced(GL_TRIANGLES, IndexCount, GL_UNSIGNED_INT, (void*)(IndexOffset * sizeof(unsigned int)), count);
@@ -200,37 +201,42 @@ void MultiMesh::SubMesh::InitTextures(bool deleteAfter)
 
 void MultiMesh::SubMesh::SetTextures(Shader& shader) const
 {
-	unsigned int diffuseNr = 0, specularNr = 0, normalNr = 0, heightNr = 0;
+	shader.Use();
+	shader.SetBool("material.diffspecTex", UseTextures);
 
-	if (UseTextures) {
-		for (int i = 0; i < Textures.size(); i++) {
-			std::string number;
-			TextureType type = Textures[i].Type;
-
-			switch (type) {
-			case TextureType::diffuse:
-				number = std::to_string(diffuseNr++);
-				break;
-			case TextureType::specular:
-				number = std::to_string(specularNr++); // transfer unsigned int to stream
-				break;
-			case TextureType::normal:
-				number = std::to_string(normalNr++); // transfer unsigned int to stream
-				break;
-			case TextureType::height:
-				number = std::to_string(heightNr++); // transfer unsigned int to stream
-				break;
-			default:
-				throw "ERROR: Texture type is not defined\n";
-			}
-
-			glActiveTexture(GL_TEXTURE0 + i);
-			shader.SetInt((names[(int)type] + number).c_str(), i);
-			glBindTexture(GL_TEXTURE_2D, Textures[i].ID);
-		}
-	}
-	else {
+	if (!UseTextures) {
 		shader.SetVec3("material.diff0", DiffColor);
 		shader.SetVec3("material.spec0", SpecColor);
+
+		return;
 	}
+
+	unsigned int diffuseNr = 0, specularNr = 0, normalNr = 0, heightNr = 0;
+
+	for (int i = 0; i < Textures.size(); i++) {
+		std::string number;
+		TextureType type = Textures[i].Type;
+
+		switch (type) {
+		case TextureType::diffuse:
+			number = std::to_string(diffuseNr++);
+			break;
+		case TextureType::specular:
+			number = std::to_string(specularNr++); // transfer unsigned int to stream
+			break;
+		case TextureType::normal:
+			number = std::to_string(normalNr++); // transfer unsigned int to stream
+			break;
+		case TextureType::height:
+			number = std::to_string(heightNr++); // transfer unsigned int to stream
+			break;
+		default:
+			throw "ERROR: Texture type is not defined\n";
+		}
+
+		shader.SetInt((names[(int)type] + number).c_str(), i);
+		glBindTextureUnit(i, Textures[i].ID);
+	}
+
+	shader.SetBool("material.normalMapping", (bool)normalNr);
 }

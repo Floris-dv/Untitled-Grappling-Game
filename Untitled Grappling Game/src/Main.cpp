@@ -135,17 +135,6 @@ int main() {
 	stbi_set_flip_vertically_on_load(true);
 
 	Model rock("resources/rock/rock.obj", true, false);
-	Model backpack("resources/backpack/backpack.obj", true, false);
-	Model saber("resources/saber/lightsaber.fbx");
-
-	std::vector<std::shared_future<LoadingTexture*>> floorTextures = {
-		StartLoadingTexture("resources/Textures/FloorDiffuse.jpg", TextureType::diffuse),
-
-		StartLoadingTexture("resources/Textures/FloorSpecular.png", TextureType::specular),
-		StartLoadingTexture("resources/Textures/FloorNormal.jpg", TextureType::normal),
-
-		StartLoadingTexture("resources/Textures/FloorDisplacement.jpg", TextureType::height)
-	};
 
 	std::vector<std::shared_future<LoadingTexture*>> loadingBluePrintTexture{ StartLoadingTexture("resources/Textures/Blueprint.jpg", TextureType::diffuse) };
 
@@ -196,57 +185,57 @@ int main() {
 
 	// This would be WAY better with #embed
 	// Set up the Shaders:
-	Shader shader("src/Shaders/NoInstance.vert", "src/Shaders/MainFrag.frag");
-	Shader asteroidShader("src/Shaders/Instanced.vert", "src/Shaders/MainFrag.frag");
-	Shader lightShader("src/Shaders/LightVert.vert", "src/Shaders/LightFrag.frag");
-	Shader skyBoxShader("src/Shaders/SkyboxVert.vert", "src/Shaders/SkyboxFrag.frag");;
+	auto shader = std::make_shared<Shader>("src/Shaders/NoInstance.vert", "src/Shaders/MainFrag.frag");
+	auto asteroidShader = std::make_shared<Shader>("src/Shaders/Instanced.vert", "src/Shaders/MainFrag.frag");
+	auto lightShader = std::make_shared<Shader>("src/Shaders/LightVert.vert", "src/Shaders/LightFrag.frag");
+	auto skyBoxShader = std::make_shared<Shader>("src/Shaders/SkyboxVert.vert", "src/Shaders/SkyboxFrag.frag");;
 	Shader postProcessingShader("src/Shaders/Framebuffer.vert", "src/Shaders/PostProcessing.frag");
-	Shader blurShader("src/Shaders/Framebuffer.vert", "src/Shaders/Blur.frag");
 	Shader bloomPassShader("src/Shaders/Framebuffer.vert", "src/Shaders/Bloompass.frag");
 
 	Shader bloomShader("src/Shaders/Bloom.comp");
 
-	Shader textureShader("src/Shaders/TextureVert.vert", "src/Shaders/TextureFrag.frag");
+	std::shared_ptr<Shader> textureShader = std::make_shared<Shader>("src/Shaders/TextureVert.vert", "src/Shaders/TextureFrag.frag");
 
-	std::vector<Texture> bluePrintTexture = { loadingBluePrintTexture[0].get()->Finish() };
+	auto blueprintMaterial = std::make_shared<Material>(textureShader, std::move(loadingBluePrintTexture));
 
-	Material blueprintMaterial(&textureShader, bluePrintTexture);
+	auto skyBoxMaterial = std::make_shared<Material>(skyBoxShader, std::vector<Texture>());
 
-	Material skyBoxMaterial(&skyBoxShader, std::vector<Texture>{});
+	auto levelMaterial = std::make_shared<Material>(asteroidShader, glm::vec3{ 0.3f, 0.35f, 1.0f }*2.0f, glm::vec3{ 1.0f, 0.5f, 0.5f });
 
-	blueprintMaterial.LoadTextures(true);
+	blueprintMaterial->LoadTextures(true);
 
-	Object<SimpleVertex> blueprintBox(&blueprintMaterial, boxVertices, SimpleVertex::Layout);
+	Object<SimpleVertex> blueprintBox(blueprintMaterial, boxVertices, SimpleVertex::Layout);
 
-	Material lightMaterial(&lightShader, { 0.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 0.0f });
+	auto lightMaterial = std::make_shared<Material>(lightShader, glm::vec3{ 0.0f, 1.0f, 1.0f }, glm::vec3{ 0.0f, 0.0f, 0.0f });
 
-	Object<SimpleVertex> box(&lightMaterial, boxVertices, SimpleVertex::Layout);
+	Object<SimpleVertex> box(lightMaterial, boxVertices, SimpleVertex::Layout);
 
 	Object<MinimalVertex> sphere;
 	{
 		Timer t("Loading the sphere");
 		auto [vertices, indices] = CreateSphere(20, 20);
-		sphere = Object(&lightMaterial, std::move(vertices), MinimalVertex::Layout, std::move(indices));
+		sphere = Object(lightMaterial, std::move(vertices), MinimalVertex::Layout, std::move(indices));
 	}
 
 	// uniform buffer(s):
 	// Matrices uniform block is at binding point 0:
 	UniformBuffer matrixUBO(sizeof(glm::mat4) + sizeof(glm::vec4), "Matrices"); // vec4 because of padding
 	{
-		matrixUBO.SetBlock(shader);
-		matrixUBO.SetBlock(asteroidShader);
-		matrixUBO.SetBlock(lightShader);
-		matrixUBO.SetBlock(textureShader);
+		matrixUBO.SetBlock(*shader);
+		matrixUBO.SetBlock(*asteroidShader);
+		matrixUBO.SetBlock(*lightShader);
+		matrixUBO.SetBlock(*textureShader);
 	}
 
 	glm::vec3 lightDir(0.0f, 3.0f, 4.0f);
+	lightDir = glm::normalize(lightDir);
 
 	// Lights uniform block is at binding point 1
 	UniformBuffer lightsUBO(480, "Lights", lightData.data());
 	{
-		lightsUBO.SetBlock(shader);
-		lightsUBO.SetBlock(asteroidShader);
-		lightsUBO.SetBlock(textureShader);
+		lightsUBO.SetBlock(*shader);
+		lightsUBO.SetBlock(*asteroidShader);
+		lightsUBO.SetBlock(*textureShader);
 	}
 
 	bool normalsToggled = false;
@@ -262,21 +251,21 @@ int main() {
 
 	// set shader uniforms
 	{
-		lightShader.Use();
-		lightShader.SetVec3("lightColor", 1.0f, 1.0f, 1.0f);
+		lightShader->Use();
+		lightShader->SetVec3("lightColor", 1.0f, 1.0f, 1.0f);
 
-		shader.Use();
-		shader.SetFloat("material.shininess", 256.0f);
-		shader.SetFloat("spotLight.cutOff", 0.9762960071199334f);
-		shader.SetFloat("spotLight.outerCutOff", 0.9659258262890683f);
-		shader.SetFloat("far_plane", far_plane);
+		shader->Use();
+		shader->SetFloat("material.shininess", 256.0f);
+		shader->SetFloat("spotLight.cutOff", 0.9762960071199334f);
+		shader->SetFloat("spotLight.outerCutOff", 0.9659258262890683f);
+		shader->SetFloat("far_plane", far_plane);
 
-		asteroidShader.Use();
-		asteroidShader.SetFloat("material.shininess", 256.0f);
-		asteroidShader.SetFloat("spotLight.cutOff", 0.9762960071199334f);
-		asteroidShader.SetFloat("spotLight.outerCutOff", 0.9659258262890683f);
-		asteroidShader.SetFloat("far_plane", far_plane);
-		asteroidShader.SetFloat("height_scale", 0.1f);
+		asteroidShader->Use();
+		asteroidShader->SetFloat("material.shininess", 256.0f);
+		asteroidShader->SetFloat("spotLight.cutOff", 0.9762960071199334f);
+		asteroidShader->SetFloat("spotLight.outerCutOff", 0.9659258262890683f);
+		asteroidShader->SetFloat("far_plane", far_plane);
+		asteroidShader->SetFloat("height_scale", 0.1f);
 
 		bloomPassShader.Use();
 		bloomPassShader.SetInt("screen", 0);
@@ -304,60 +293,11 @@ int main() {
 		rock.getMesh().VAO.AddBuffer(asteroidPosVBO, bl);
 	}
 
-	std::array<glm::vec3, 9> objectPositions = {
-		glm::vec3(-3.0, -0.5, -3.0),
-		glm::vec3(0.0, -0.5, -3.0),
-		glm::vec3(3.0, -0.5, -3.0),
-		glm::vec3(-3.0, -0.5, 0.0),
-		glm::vec3(0.0, -0.5, 0.0),
-		glm::vec3(3.0, -0.5, 0.0),
-		glm::vec3(-3.0, -0.5, 3.0),
-		glm::vec3(0.0, -0.5, 3.0),
-		glm::vec3(3.0, -0.5, 3.0),
-	};
+	Level level({ 10.0f, 10.0f, 10.0f }, { { 90.0f, 0.0f, -10.0f }, {110.0f, 0.0f, 10.0f } }, { { {0.0f, -20.0f, 0.0f}, { 20.0f, 20.0f, 20.0f }} }, levelMaterial);
+	// Level level("Level.dat", &levelMaterial);
+	level.Write("Level.dat");
 
-	glm::mat4* backpackMatrices = new glm::mat4[objectPositions.size()];
-	for (unsigned int i = 0; i < objectPositions.size(); i++) {
-		glm::mat4 model = glm::mat4(1.0f);
-
-		model = glm::translate(model, objectPositions[i]);
-
-		model = glm::scale(model, glm::vec3(.5f));
-
-		backpackMatrices[i] = model;
-	}
-
-	VertexBuffer backpackPositions((unsigned int)objectPositions.size() * sizeof(glm::mat4), backpackMatrices);
-
-	{
-		BufferLayout bl(5);
-
-		bl.Push<glm::mat4>(1);
-		bl.SetInstanced();
-		{
-			Timer t("OpenGL Loading backpack");
-			backpack.DoOpenGL();
-		}
-
-		backpack.getMesh().VAO.AddBuffer(backpackPositions, bl);
-	}
-	Material m(&shader, std::move(floorTextures));
-	Object<Vertex> floor(&m, floorVertices, Vertex::Layout);
-	floor.DoOpenGL(true);
-
-	Material level1(&asteroidShader, bluePrintTexture);
-
-	Level level({ 10.0f, 10.0f, 10.0f }, { { {0.0f, -20.0f, 0.0f}, {20.0f, 20.0f, 20.0f} } }, &level1);
-	// {
-	// 	BufferLayout bl(5);
-	// 
-	// 	bl.Push<glm::mat4>(1);
-	// 	bl.SetInstanced();
-	// 
-	// 	level.m_VAO.AddBuffer(level.m_InstanceVBO, bl);
-	// }
-
-		// only when everything is set up, do this:
+	// only when everything is set up, do this:
 	Window::Get().Maximize();
 
 	// capture the mouse: hide it and set it to the center of the screen
@@ -460,26 +400,21 @@ int main() {
 		ImGui::NewLine();
 
 		glEnable(GL_DEPTH_TEST);
+		level.Render();
+
 		// draw pointlights
 		{
 			Profiler p("pointLights drawing");
 
-			lightShader.Use();
+			lightShader->Use();
 			for (int i = 0; i < pointLightPositions.size(); i++) {
 				glm::mat4 model(1.0f);
 				model = glm::translate(model, pointLightPositions[i]);
 				model = glm::scale(model, glm::vec3(0.1f));
-				lightMaterial.SetColors({ 2.0f, 2.0f, 2.0f }, { 0.0f, 0.0f, 0.0f });
+				lightMaterial->SetColors({ 2.0f, 2.0f, 2.0f }, { 0.0f, 0.0f, 0.0f });
 				// renderer.Draw(box, lightShader);
 				box.Draw(model, false);
 			}
-		}
-		// draw backpack
-		{
-			Profiler p("backpack drawing");
-
-			// renderer.IDraw(backpack, asteroidShader, objectPositions.size());
-			backpack.DrawInstanced(asteroidShader, objectPositions.size(), Camera::Get().GetFrustum(), Transform());
 		}
 		// draw the asteroids
 		{
@@ -487,15 +422,7 @@ int main() {
 			Transform t;
 
 			// renderer.IDraw(rock, asteroidShader, count);
-			rock.DrawInstanced(asteroidShader, count, Camera::Get().GetFrustum(), t);
-		}
-		// draw the floor
-		{
-			Profiler p("floor drawing");
-			floor.Draw(glm::mat4(1.0f), true);
-
-			// blueprintBox.Draw(true);
-			level.Render();
+			rock.DrawInstanced(*asteroidShader, count, Camera::Get().GetFrustum(), t);
 		}
 		// depth shenanigans: has to happen after everything, but before skybox
 		{
@@ -528,31 +455,22 @@ int main() {
 
 			glDisable(GL_CULL_FACE); // disable face culling: this is because the vertex buffer I use (lightVAO) is focused on the outside, not on the inside, and it's not supposed to cull any faces anyway
 			glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content (as it's filled with ones as default)
-			skyBoxShader.Use();
+			skyBoxShader->Use();
 
 			glm::mat4 unTranslatedView(glm::mat3(Camera::Get().GetViewMatrix()));
 
-			skyBoxShader.SetMat4("ProjunTranslatedView", Camera::Get().GetProjMatrix() * unTranslatedView);
+			skyBoxShader->SetMat4("ProjunTranslatedView", Camera::Get().GetProjMatrix() * unTranslatedView);
 
-			skyBoxShader.SetInt("skyBox", 0);
+			skyBoxShader->SetInt("skyBox", 0);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_CUBE_MAP, skyBoxTex);
 
 			// renderer.Draw(box, skyBoxShader);
-			box.Draw(&skyBoxMaterial, {}, false);
+			box.Draw(skyBoxMaterial.get(), {}, false);
 			glDepthFunc(GL_LESS); // set depth function back to default
 
 			glEnable(GL_CULL_FACE);
 		}
-		shader.Use();
-
-		Transform t;
-		t.setLocalPosition({ 20, 0, 0 });
-		t.setLocalScale(glm::vec3{ 0.01f });
-
-		glm::mat4 MVP = VP;
-		saber.Draw(shader, Camera::Get().GetFrustum(), t);
-
 #if ENABLE_BLOOM
 		if (bloomToggled)
 		{
@@ -641,9 +559,6 @@ int main() {
 #endif
 
 		// renderer.Finalize();
-
-		const glm::vec3& front = Camera::Get().Front;
-		ImGui::Text("Front: %f %f %f", front.x, front.y, front.z);
 
 		Framebuffers::Draw(exposure, Framebuffers::mainTex, bloomRTs[2]);
 		EndFrame();

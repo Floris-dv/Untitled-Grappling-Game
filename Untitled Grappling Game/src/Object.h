@@ -15,7 +15,7 @@ private:
 
 	IndexBuffer m_IBO;
 
-	Material* m_Material = nullptr;
+	std::shared_ptr<Material> m_Material = nullptr;
 
 public:
 	VertexArray VAO;
@@ -27,8 +27,8 @@ public:
 	Object<T>& operator=(const Object& other) = delete;
 
 	template<std::size_t VBOSize, size_t IBOSize = 0>
-	Object(Material* material, const std::array<T, VBOSize>& vertices, const BufferLayout& bufferLayout, const std::array<GLuint, IBOSize>& indices = std::array<GLuint, 0>())
-		: m_Material(material), m_UseIBO(!indices.empty()), m_VBO(vertices.size() * sizeof(T), vertices.data())
+	Object(std::shared_ptr<Material> material, const std::array<T, VBOSize>& vertices, const BufferLayout& bufferLayout, const std::array<GLuint, IBOSize>& indices = std::array<GLuint, 0>())
+		: m_Material(std::move(material)), m_UseIBO(!indices.empty()), m_VBO(vertices.size() * sizeof(T), vertices.data())
 	{
 		VAO.AddBuffer(m_VBO, bufferLayout);
 
@@ -41,15 +41,15 @@ public:
 			m_NumVerts = vertices.size();
 	}
 
-	Object(Material* material, const std::vector<T>& vertices, const BufferLayout& bufferLayout, const std::vector<GLuint>& indices);
+	Object(std::shared_ptr<Material> material, const std::vector<T>& vertices, const BufferLayout& bufferLayout, const std::vector<GLuint>& indices);
 
-	Object(Material* material, const std::vector<T>& vertices, const BufferLayout& bufferLayout);
+	Object(std::shared_ptr<Material> material, const std::vector<T>& vertices, const BufferLayout& bufferLayout);
 
-	void Draw(const glm::mat4& modelMatrix, bool setMaterial) { Draw(m_Material, modelMatrix, setMaterial); }
+	void Draw(const glm::mat4& modelMatrix, bool setMaterial) { Draw(m_Material.get(), modelMatrix, setMaterial); }
 
 	virtual void Draw(Material* material, const glm::mat4& modelMatrix, bool setMaterial);
 
-	void DrawInstanced(bool setMaterial, unsigned int count) { DrawInstanced(m_Material, setMaterial, count); }
+	void DrawInstanced(bool setMaterial, unsigned int count) { DrawInstanced(m_Material.get(), setMaterial, count); }
 
 	virtual void DrawInstanced(Material* material, bool setMaterial, unsigned int count);
 
@@ -74,15 +74,15 @@ static const BufferLayout instanceBufferLayout = {
 };
 
 template<typename T>
-Object<T>::Object(Material* material, const std::vector<T>& vertices, const BufferLayout& bufferLayout)
-	: m_Material(material), m_NumVerts(vertices.size()), m_VBO(vertices.size() * sizeof(T), vertices.data())
+Object<T>::Object(std::shared_ptr<Material> material, const std::vector<T>& vertices, const BufferLayout& bufferLayout)
+	: m_Material(std::move(material)), m_NumVerts(vertices.size()), m_VBO(vertices.size() * sizeof(T), vertices.data())
 {
 	VAO.AddBuffer(m_VBO, bufferLayout);
 }
 
 template<typename T>
-Object<T>::Object(Material* material, const std::vector<T>& vertices, const BufferLayout& bufferLayout, const std::vector<GLuint>& indices)
-	: m_Material(material), m_UseIBO(true),
+Object<T>::Object(std::shared_ptr<Material> material, const std::vector<T>& vertices, const BufferLayout& bufferLayout, const std::vector<GLuint>& indices)
+	: m_Material(std::move(material)), m_UseIBO(true),
 	m_VBO(vertices.size() * sizeof(T), vertices.data()),
 	m_IBO(indices.size() * sizeof(GLuint), indices.data()),
 	m_NumVerts(indices.size())

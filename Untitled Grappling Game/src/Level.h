@@ -15,7 +15,12 @@ public:
 		inline static Object<SimpleVertex> Object;
 	};
 
-	Level(const glm::vec3& startPlatformSize, std::vector<Block>&& blocks, Material* levelBlocksTheme);
+	Level(const glm::vec3& startPlatformSize, const Block& finishBox, std::vector<Block>&& blocks, std::shared_ptr<Material> levelBlocksTheme);
+
+	// TODO: make the levelFile store the material.
+	Level(std::string_view levelFile, std::shared_ptr<Shader> levelBlocksTheme);
+
+	void Write(std::string_view levelFile);
 
 	// Assumes the MVP-matrix has been set
 	void Render();
@@ -27,13 +32,18 @@ public:
 	void UpdatePhysics(Camera& camera);
 
 private:
-	glm::vec3 m_StartPlatformSize; // Centered around 0 0 0
-
 	std::vector<Block> m_Blocks;
 	std::vector<glm::mat4> m_Matrices;
 
-	Material* m_Material;
+	Block m_FinishBox;
+
+	std::shared_ptr<Material> m_Material;
 
 	VertexBuffer m_InstanceVBO;
+
+	static constexpr uint32_t VERSION_NR = 0;
+
+	// Uses m_Blocks and m_StartPlatformSize to setup m_Matrices and m_InstanceVBO
+	void SetupMatricesInstanceVBO();
 };
 

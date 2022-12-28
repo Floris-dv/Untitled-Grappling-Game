@@ -75,3 +75,11 @@ public:
 };
 
 std::future<LoadingTexture*> StartLoadingTexture(const std::string& path, TextureType type = TextureType::unknown);
+
+template<typename OStream>
+inline OStream& operator<<(OStream& output, Texture const& texture) {
+	output << texture.Path << '\n';
+	output << (int)texture.Type << '\n';
+
+	return output;
+}

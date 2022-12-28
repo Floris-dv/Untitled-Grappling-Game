@@ -53,7 +53,7 @@ static GLuint GetShader(const std::string& filename, GLenum type) {
 	try {
 		Source << file.rdbuf();
 	}
-	catch (std::ifstream::failure e) {
+	catch (std::ifstream::failure) {
 		NG_ERROR("Couldn't read file {}", filename);
 	}
 

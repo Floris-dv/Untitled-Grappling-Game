@@ -2,22 +2,38 @@
 #include "Material.h"
 #include <glad/glad.h>
 
-Material::Material(Shader* shader, const std::vector<Texture>& texs) noexcept : m_Textures(texs), m_OpenGLPrepared(true), m_Shader(shader), m_UseTextures(true)
+Material::Material(std::shared_ptr<Shader> shader, const std::vector<Texture>& texs) noexcept : m_Textures(texs), m_Shader(std::move(shader))
 {}
 
-Material::Material(Shader* shader, std::vector<Texture>&& texs) noexcept : m_Textures(std::move(texs)), m_OpenGLPrepared(true), m_Shader(shader), m_UseTextures(true)
+Material::Material(std::shared_ptr<Shader> shader, std::vector<Texture>&& texs) noexcept : m_Textures(std::move(texs)), m_Shader(std::move(shader)), m_UseTextures(true)
 {}
 
-Material::Material(Shader* shader, std::vector<std::shared_future<LoadingTexture*>>&& loadingTexs) noexcept : m_LoadingTextures(std::move(loadingTexs)), m_OpenGLPrepared(false), m_Shader(shader), m_UseTextures(true)
+Material::Material(std::shared_ptr<Shader> shader, std::vector<std::shared_future<LoadingTexture*>>&& loadingTexs) noexcept :
+	m_LoadingTextures(std::move(loadingTexs)), m_OpenGLPrepared(false), m_Shader(std::move(shader)), m_UseTextures(true)
 {}
 
-Material::Material(Shader* shader, const glm::vec3& diff, const glm::vec3& spec) noexcept : m_Diffuse(diff), m_Specular(spec), m_Shader(shader), m_UseTextures(false), m_OpenGLPrepared(true)
+Material::Material(std::shared_ptr<Shader> shader, const glm::vec3& diff, const glm::vec3& spec) noexcept :
+	m_Diffuse(diff), m_Specular(spec), m_Shader(std::move(shader))
 {}
 
-Material::Material(const Material& other) : m_Shader(other.m_Shader), m_Textures(other.m_Textures), m_Diffuse(other.m_Diffuse), m_Specular(other.m_Specular), m_UseTextures(other.m_UseTextures), m_OpenGLPrepared(true)
+Material::Material(const Material& other) : m_Shader(other.m_Shader), m_Textures(other.m_Textures),
+m_Diffuse(other.m_Diffuse), m_Specular(other.m_Specular), m_UseTextures(other.m_UseTextures), m_OpenGLPrepared(true)
 {
 	if (!other.m_OpenGLPrepared)
 		throw std::runtime_error("Can't copy other futures");
+}
+
+Material::Material(Material&& other) noexcept
+{
+#define SWAP(a) std::swap(##a, other.##a)
+	SWAP(m_Shader);
+	SWAP(m_Textures);
+	SWAP(m_Diffuse);
+	SWAP(m_Specular);
+	SWAP(m_UseTextures);
+	SWAP(m_OpenGLPrepared);
+	SWAP(m_LoadingTextures);
+#undef SWAP
 }
 
 void Material::SetColors(const glm::vec3& diff, const glm::vec3& spec)
@@ -46,12 +62,13 @@ void Material::LoadTextures(bool deleteData)
 void Material::Load(Shader& shader)
 {
 	shader.Use();
-	shader.SetBool("material.useTex", m_UseTextures);
+	shader.SetBool("material.diffspecTex", m_UseTextures);
 
 	if (!m_UseTextures) {
 		shader.SetVec3("material.diff0", m_Diffuse);
 		shader.SetVec3("material.spec0", m_Specular);
 
+		shader.SetBool("material.normalMapping", false);
 		return;
 	}
 
@@ -81,6 +98,8 @@ void Material::Load(Shader& shader)
 		shader.SetInt((names[(int)type] + number).c_str(), i);
 		glBindTextureUnit(i, m_Textures[i].ID);
 	}
+
+	shader.SetBool("material.normalMapping", (bool)normalNr);
 }
 
 Material::~Material() noexcept
