@@ -77,6 +77,14 @@ void Window::Init(const WindowProps& props)
 		WindowProps& data = *(WindowProps*)glfwGetWindowUserPointer(window);
 
 		data.Functions.KeyPressFn((Key)key, scanCode, (Action)action, mods);
+
+		if (action != GLFW_RELEASE)
+			return;
+
+		auto range = data.WindowRef->GetKeyMap((Key)key);
+		for (auto it = range.first; it != range.second; ++it) {
+			it->second();
+		}
 		}
 	);
 
@@ -135,6 +143,11 @@ void Window::PollSwap()
 {
 	glfwPollEvents();
 	glfwSwapBuffers(m_Window);
+}
+
+void Window::SetKey(Key key, std::function<void(void)> function)
+{
+	m_KeyMap.emplace(key, function);
 }
 
 void Window::SetVSync(bool vSync)
@@ -198,7 +211,7 @@ void Window::SetupOpenGL()
 #endif
 
 	// background color, change if you want
-	glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.1f, 1.0f);
 
 	// enable Face culling
 	glEnable(GL_CULL_FACE);
@@ -207,8 +220,10 @@ void Window::SetupOpenGL()
 	// which are counted "front faces"
 	glFrontFace(GL_CCW); // (counter-)clockwise winding
 
-	// Enable depth testing buffer, if you stop this it look wonky
+	// Enable depth testing buffer
 	glEnable(GL_DEPTH_TEST);
+
+	glDepthFunc(GL_ALWAYS);
 
 #if CORRECT_GAMMA
 	glEnable(GL_FRAMEBUFFER_SRGB);

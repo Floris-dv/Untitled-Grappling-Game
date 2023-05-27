@@ -1,10 +1,8 @@
 #include "pch.h"
 #include "Camera.h"
-#include "Level.h"
-#include "imgui/imgui.h"
 
-Camera::Camera(CameraOptions options, float aspectRatio, glm::vec3 Position, glm::vec3 Up, float yaw, float pitch) :
-	Options(options), Vel(glm::vec3(0.0f)), Front(glm::vec3(0.0f, 0.0f, -1.0f)), AspectRatio(aspectRatio), Position(Position), m_WorldUp(Up), m_Up(Up), m_Yaw(yaw), m_Pitch(pitch), PhysicsPosition(Position.x, Position.y - PHYSICSOFFSET, Position.z)
+Camera::Camera(Camera_Type cameraType, CameraOptions options, float aspectRatio, glm::vec3 Position, glm::vec3 Up, float yaw, float pitch) :
+	Options(options), Vel(glm::vec3(0.0f)), Front(glm::vec3(0.0f, 0.0f, -1.0f)), AspectRatio(aspectRatio), Position(Position), m_WorldUp(Up), m_Up(Up), m_Yaw(yaw), m_Pitch(pitch), CameraType(cameraType)
 {
 	m_Right = glm::normalize(glm::cross(Front, m_WorldUp));
 }
@@ -57,7 +55,7 @@ const glm::mat4& Camera::GetVPMatrix()
 
 void Camera::ProcessKeyboard(Camera_Movement direction, float deltaTime)
 {
-	const float velocity = Options.MovementSpeed * deltaTime * (m_GrapplingHook.Active() ? 0.1f : 1.0f);
+	const float velocity = Options.MovementSpeed * deltaTime;
 
 	if (direction & MOVEMENT_FORWARD)
 		Vel += glm::normalize(glm::vec3(Front.x, 0.0f, Front.z)) * velocity;
@@ -67,8 +65,6 @@ void Camera::ProcessKeyboard(Camera_Movement direction, float deltaTime)
 		Vel += glm::normalize(glm::vec3(m_Right.x, 0.0f, m_Right.z)) * velocity;
 	if (direction & MOVEMENT_LEFT)
 		Vel -= glm::normalize(glm::vec3(m_Right.x, 0.0f, m_Right.z)) * velocity;
-	if (direction & MOVEMENT_UP)
-		Vel += m_WorldUp * velocity;
 }
 
 void Camera::ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch)
@@ -101,29 +97,8 @@ void Camera::ProcessMouseScroll(float xoffset, float yoffset)
 
 void Camera::UpdateCameraVectors(float deltaTime)
 {
+	UpdatePosition(deltaTime);
 	m_IsDirty = true;
-
-	if (m_GrapplingHook.Active()) {
-		Vel.x *= glm::pow(0.97f, deltaTime * Options.AirResistance);
-		Vel.z *= glm::pow(0.97f, deltaTime * Options.AirResistance);
-	}
-	else {
-		Vel.x *= glm::pow(0.97f, deltaTime * Options.Resistance);
-		Vel.z *= glm::pow(0.97f, deltaTime * Options.Resistance);
-	}
-
-	Vel.y -= GRAVITY * deltaTime;
-
-	if (PhysicsPosition.y < 0.0f && !m_GrapplingHook.Active()) {
-		// reset the m_Position and Vel
-		Position.y = PHYSICSOFFSET;
-		Vel.y = glm::max(0.0f, Vel.y);
-	}
-
-	Vel += m_GrapplingHook.Update(Position) / Options.Mass;
-
-	// update m_Position
-	Position += Vel * deltaTime * 60.0f;
 
 	// calculate the new Front vector
 	Front.x = glm::cos(glm::radians(m_Yaw)) * glm::cos(glm::radians(m_Pitch));
@@ -133,8 +108,12 @@ void Camera::UpdateCameraVectors(float deltaTime)
 	// also re-calculate the Right and Up vector
 	m_Right = glm::normalize(glm::cross(Front, m_WorldUp));  // normalize the vectors, because their length gets closer to 0 the more you look Up or down which results in slower movement.
 	m_Up = glm::normalize(glm::cross(m_Right, Front));
+}
 
-	PhysicsPosition = { Position.x, Position.y - PHYSICSOFFSET, Position.z };
+void Camera::Reset() {
+	Vel = glm::vec3();
+	Position = glm::vec3();
+	Front = glm::vec3(1.0f, 0.0f, 0.0f);
 }
 
 const Frustum& Camera::GetFrustum()

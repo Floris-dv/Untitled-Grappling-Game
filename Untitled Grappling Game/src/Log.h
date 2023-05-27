@@ -11,14 +11,13 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/string_cast.hpp"
 
-#ifndef OVERLOAD
-#define OVERLOAD 1
+#ifndef OVERLOAD_GLM_OSTREAM
+#define OVERLOAD_GLM_OSTREAM 1
 #endif
 
 class Log
 {
 public:
-
 	static void Init();
 
 	static std::shared_ptr<spdlog::logger>& GetLogger() { return s_Logger; }
@@ -26,7 +25,7 @@ private:
 	static std::shared_ptr<spdlog::logger> s_Logger;
 };
 
-#if OVERLOAD
+#if OVERLOAD_GLM_OSTREAM
 template<typename OStream, glm::length_t L, typename T, glm::qualifier Q>
 inline OStream& operator<<(OStream& os, const glm::vec<L, T, Q>& vector)
 {

@@ -8,14 +8,13 @@
 // stb_image
 #include <stb_image.h>
 // glm
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/norm.hpp>
+// #include <glm/gtx/norm.hpp>
 // imgui
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
+
+#include <imguizmo/ImGuizmo.h>
 
 // own files
 #include "Shader.h"
@@ -27,6 +26,9 @@
 #include "Object.h"
 #include "Window.h"
 #include "Level.h"
+#include "SaveFile.h"
+#include "GrapplingCamera.h"
+#include "EditingCamera.h"
 
 #include "Framebuffers.h"
 
@@ -41,12 +43,13 @@
 
 extern float now;
 
+extern float deltaTime;
+
 float Surface = .48f;
 
 extern bool showDepthMap;
 
 unsigned int loadCubeMap(std::array<std::string, 6> faces, std::string directory) {
-#if QUICK_LOADING
 	std::array<std::future<LoadingTexture*>, 6> futures;
 
 	for (int i = 0; i < 6; i++) {
@@ -60,7 +63,6 @@ unsigned int loadCubeMap(std::array<std::string, 6> faces, std::string directory
 			faces[i], directory, TextureType::unknown
 				);
 	}
-#endif
 
 	unsigned int Map;
 
@@ -73,12 +75,13 @@ unsigned int loadCubeMap(std::array<std::string, 6> faces, std::string directory
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-#if QUICK_LOADING
 	for (int i = 0; i < 6; i++) {
 		try {
 			LoadingTexture* t = futures[i].get();
-			if (t == nullptr)
+			if (t == nullptr) {
 				NG_ERROR("Future got no result!");
+				continue;
+			}
 
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
 				0, t->Format, t->Width, t->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, t->read());
@@ -87,29 +90,6 @@ unsigned int loadCubeMap(std::array<std::string, 6> faces, std::string directory
 		}
 		catch (const std::exception& e) { NG_ERROR(e.what()); }
 	}
-#else
-	for (int i = 0; i < 6; i++) {
-		std::string filename = directory + '/' + faces[i];
-		int x, y, channels;
-		unsigned char* data = stbi_load(filename.c_str(), &x, &y, &channels, 0);
-		unsigned int format;
-
-		if (channels == 1)
-			format = GL_RED;
-		else if (channels == 3)
-			format = GL_RGB;
-		else if (channels == 4)
-			format = GL_RGBA;
-		else {
-			std::cerr << "Texture in file " + filename + " is weird: has " + std::to_string(channels) + " amound of channels, instead of the normal 1, 3, or 4" << std::endl;
-			debug_break();
-		}
-
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-			0, format, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		stbi_image_free(data);
-	}
-#endif
 
 	return Map;
 }
@@ -130,13 +110,8 @@ int main() {
 	// set up everything:
 	Setup();
 #endif
-
 	// load models
 	stbi_set_flip_vertically_on_load(true);
-
-	Model rock("resources/rock/rock.obj", true, false);
-
-	std::vector<std::shared_future<LoadingTexture*>> loadingBluePrintTexture{ StartLoadingTexture("resources/Textures/Blueprint.jpg", TextureType::diffuse) };
 
 #if QUICK_LOADING
 	Setup();
@@ -151,60 +126,22 @@ int main() {
 	  glm::vec3(0.0f,  0.0f, -3.0f)
 	};
 
-	unsigned int skyBoxTex;
-	{
-		const std::array<std::string, 6> faces = {
-			"right.jpg",
-			"left.jpg",
-			"top.jpg",
-			"bottom.jpg",
-			"front.jpg",
-			"back.jpg"
-		};
-
-		{
-			Timer t("Cube Map");
-			skyBoxTex = loadCubeMap(faces, "resources/Textures/Skybox");
-		}
-	}
-
-	VertexArray floorVAO;
-	VertexBuffer floorVBO(sizeof(floorVertices), floorVertices.data());
-	{
-		BufferLayout floorBL{ {
-			{GL_FLOAT, 3},
-			{GL_FLOAT, 3},
-			{GL_FLOAT, 2},
-			{GL_FLOAT, 3},
-			{GL_FLOAT, 3},
-			}
-		};
-
-		floorVAO.AddBuffer(floorVBO, floorBL);
-	}
-
 	// This would be WAY better with #embed
 	// Set up the Shaders:
 	auto shader = std::make_shared<Shader>("src/Shaders/NoInstance.vert", "src/Shaders/MainFrag.frag");
 	auto asteroidShader = std::make_shared<Shader>("src/Shaders/Instanced.vert", "src/Shaders/MainFrag.frag");
 	auto lightShader = std::make_shared<Shader>("src/Shaders/LightVert.vert", "src/Shaders/LightFrag.frag");
-	auto skyBoxShader = std::make_shared<Shader>("src/Shaders/SkyboxVert.vert", "src/Shaders/SkyboxFrag.frag");;
-	Shader postProcessingShader("src/Shaders/Framebuffer.vert", "src/Shaders/PostProcessing.frag");
-	Shader bloomPassShader("src/Shaders/Framebuffer.vert", "src/Shaders/Bloompass.frag");
-
+	Shader lightInstanced("src/Shaders/LightInstanced.vert", "src/Shaders/LightFrag.frag");
 	Shader bloomShader("src/Shaders/Bloom.comp");
+	Shader crosshairShader("src/Shaders/Crosshair.vert", "src/Shaders/Crosshair.frag");
 
-	std::shared_ptr<Shader> textureShader = std::make_shared<Shader>("src/Shaders/TextureVert.vert", "src/Shaders/TextureFrag.frag");
-
-	auto blueprintMaterial = std::make_shared<Material>(textureShader, std::move(loadingBluePrintTexture));
-
-	auto skyBoxMaterial = std::make_shared<Material>(skyBoxShader, std::vector<Texture>());
+	auto crosshairFuture = StartLoadingTexture("resources/Textures/Crosshair.png");
 
 	auto levelMaterial = std::make_shared<Material>(asteroidShader, glm::vec3{ 0.3f, 0.35f, 1.0f }*2.0f, glm::vec3{ 1.0f, 0.5f, 0.5f });
 
-	blueprintMaterial->LoadTextures(true);
+	auto mainMaterial = std::make_shared<Material>(shader, glm::vec3{ 0.3f, 0.35f, 1.0f }, glm::vec3{ 0.1f, 0.05f, 0.05f });
 
-	Object<SimpleVertex> blueprintBox(blueprintMaterial, boxVertices, SimpleVertex::Layout);
+	auto finishMaterial = std::make_shared<Material>(shader, glm::vec3{ 1.0f, 0.35, 0.3f }, glm::vec3{ 0.05f, 0.05f, 0.1f });
 
 	auto lightMaterial = std::make_shared<Material>(lightShader, glm::vec3{ 0.0f, 1.0f, 1.0f }, glm::vec3{ 0.0f, 0.0f, 0.0f });
 
@@ -213,8 +150,8 @@ int main() {
 	Object<MinimalVertex> sphere;
 	{
 		Timer t("Loading the sphere");
-		auto [vertices, indices] = CreateSphere(20, 20);
-		sphere = Object(lightMaterial, std::move(vertices), MinimalVertex::Layout, std::move(indices));
+		auto [vertices, indices](CreateSphere(20, 20));
+		sphere = Object<MinimalVertex>(lightMaterial, vertices, MinimalVertex::Layout, indices);
 	}
 
 	// uniform buffer(s):
@@ -224,7 +161,7 @@ int main() {
 		matrixUBO.SetBlock(*shader);
 		matrixUBO.SetBlock(*asteroidShader);
 		matrixUBO.SetBlock(*lightShader);
-		matrixUBO.SetBlock(*textureShader);
+		matrixUBO.SetBlock(lightInstanced);
 	}
 
 	glm::vec3 lightDir(0.0f, 3.0f, 4.0f);
@@ -235,7 +172,6 @@ int main() {
 	{
 		lightsUBO.SetBlock(*shader);
 		lightsUBO.SetBlock(*asteroidShader);
-		lightsUBO.SetBlock(*textureShader);
 	}
 
 	bool normalsToggled = false;
@@ -266,46 +202,50 @@ int main() {
 		asteroidShader->SetFloat("spotLight.outerCutOff", 0.9659258262890683f);
 		asteroidShader->SetFloat("far_plane", far_plane);
 		asteroidShader->SetFloat("height_scale", 0.1f);
+	}
 
-		bloomPassShader.Use();
-		bloomPassShader.SetInt("screen", 0);
+	Texture crosshair;
+	// Crosshair
+	{
+		crosshair = crosshairFuture.get()->Finish();
+		crosshairShader.Use();
+		crosshairShader.SetInt("crosshairTex", 7);
 	}
 
 	Shader::ClearShaderCache();
 
-	const unsigned int amount = 100000;
-	glm::mat4* modelMatrices = new glm::mat4[amount];
+	glm::vec3 line[] = { {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f} };
+	VertexBuffer lineVBO(2 * sizeof(glm::vec3), line);
+	VertexBuffer linePosVBO;
+	VertexArray lineVAO;
+	lineVAO.AddBuffer(lineVBO, { { { GL_FLOAT, 3 } } });
 
-	srand((unsigned int)std::chrono::steady_clock::now().time_since_epoch().count()); // initialize random seed
-	GenerateModelMatricesInRing(amount, modelMatrices, 150.0f, 75.0f);
-
-	VertexBuffer asteroidPosVBO(amount * sizeof(glm::mat4), &modelMatrices[0]);
 	{
-		BufferLayout bl(5);
+		const int lineCount = 10000;
 
-		bl.Push<glm::mat4>(1);
-		bl.SetInstanced();
-		{
-			Timer t("OpenGL Loading rock");
-			rock.DoOpenGL();
+		glm::mat4* linePositions = new glm::mat4[2 * lineCount + 1];
+
+		for (int i = -lineCount / 2; i <= lineCount / 2; i++) {
+			glm::mat4& model = linePositions[i + lineCount / 2];
+
+			model = glm::scale(glm::translate(glm::mat4(1.0f), { 0.0f, 0.0f, (float)i }), { (float)lineCount, (float)lineCount, (float)lineCount });
 		}
 
-		rock.getMesh().VAO.AddBuffer(asteroidPosVBO, bl);
+		for (int i = -lineCount / 2; i <= lineCount / 2; i++) {
+			glm::mat4& model = linePositions[i + lineCount / 2 + lineCount];
+
+			model = glm::scale(glm::rotate(glm::translate(glm::mat4(1.0f), { (float)i, 0.0f, 0.0f }), glm::half_pi<float>(), { 0.0f, 1.0f, 0.0f }), { (float)lineCount, (float)lineCount, (float)lineCount });
+		}
+
+		linePosVBO = VertexBuffer(sizeof(linePositions), linePositions);
+		lineVAO.AddBuffer(linePosVBO, instanceBufferLayout);
+
+		delete[] linePositions;
 	}
 
-	Level level({ 10.0f, 10.0f, 10.0f }, { { 90.0f, 0.0f, -10.0f }, {110.0f, 0.0f, 10.0f } }, { { {0.0f, -20.0f, 0.0f}, { 20.0f, 20.0f, 20.0f }} }, levelMaterial);
-	// Level level("Level.dat", &levelMaterial);
-	level.Write("Level.dat");
+	int LevelNr = 1;
 
-	// only when everything is set up, do this:
-	Window::Get().Maximize();
-
-	// capture the mouse: hide it and set it to the center of the screen
-	Window::Get().SetCursor(false);
-
-	Window::Get().ResetTime();
-
-	ti.~Timer();
+	Level level("Levels/Level1.dat", asteroidShader, shader);
 
 	float lSS = 20.0f;
 
@@ -318,8 +258,7 @@ int main() {
 #if ENABLE_BLOOM
 	Framebuffers::Bind(0);
 
-	bool bloomToggled = false;
-	bool prevBloomToggled = false;
+	bool bloomToggled = true;
 
 	Framebuffers::Bind(0);
 
@@ -352,29 +291,68 @@ int main() {
 		glTextureParameteri(bloomRTs[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTextureParameteri(bloomRTs[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	}
+
+	Framebuffers::PostProcessingShader->Use();
+	Framebuffers::PostProcessingShader->SetBool("bloom", bloomToggled);
+	Framebuffers::PostProcessingShader->SetInt("bloomBlur", 1);
+
+	Framebuffers::Bind(Framebuffers::main);
+	GLuint attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+	glDrawBuffers((int)bloomToggled + 1, attachments);
 #endif
+
+	bool editLevel = false;
+	size_t blockEditingIndex = 0;
+
+	{
+		auto callbackFn = [&editLevel, &level]() {
+			editLevel = !editLevel;
+			ImGuizmo::Enable(editLevel);
+			if (editLevel) {
+				Camera::SetCamera<EditingCamera>(Camera::CameraOptions{ 2.5f, 0.1f, 100.0f }, Window::Get().GetAspectRatio(), glm::vec3{ 0.0f }, glm::vec3{ 0.0f, 1.0f, 0.0f }, 90.0f, 0.0f);
+			}
+			else {
+				level.UpdateInstanceVBO();
+				Camera::SetCamera<GrapplingCamera>(20.0f, 1.0f, Camera::CameraOptions{ 2.5f, 0.1f, 100.0f }, Window::Get().GetAspectRatio(), glm::vec3{ 0.0f }, glm::vec3{ 0.0f, 1.0f, 0.0f }, 90.0f, 0.0f);
+			}
+		};
+		Window::Get().SetKey(KEY_Z, callbackFn);
+
+		editLevel = true;
+		callbackFn(); // Sets upt the camera
+	}
+
+	// only when everything is set up, do this:
+	Window::Get().Maximize();
+
+	// capture the mouse: hide it and set it to the center of the screen
+	Window::Get().SetCursor(false);
+
+	Window::Get().ResetTime();
+
+	ti.~Timer();
 
 	// saber.DoOpenGL();
 	while (!Window::Get().ShouldClose())
 	{
 		StartFrame();
-		level.UpdatePhysics(Camera::Get());
 
 		// Set the current framebuffer to the correct one
 		Framebuffers::Bind(Framebuffers::main);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		const glm::mat4 VP = Camera::Get().GetVPMatrix();
+		// const glm::mat4 Proj = editLevel ? glm::ortho<float>(-100.0f, 100.0f, -100.0f, 100.0f, 0.1f, 200.0f) : Camera::Get().GetProjMatrix();
+		const glm::mat4 VP = Camera::Get()->GetVPMatrix();
 
 		// update the UBO's:
 		{
 			matrixUBO.SetData(0, sizeof(glm::mat4), glm::value_ptr(VP));
-			matrixUBO.SetData(64, sizeof(glm::vec3), &Camera::Get().Position);
+			matrixUBO.SetData(64, sizeof(glm::vec3), &Camera::Get()->Position);
 
 			lightsUBO.SetData(0, 12, glm::value_ptr(lightDir));
-			lightsUBO.SetData(384, 12, glm::value_ptr(Camera::Get().Position)); // Spotlight pos
-			lightsUBO.SetData(400, 12, glm::value_ptr(Camera::Get().Front));	// Spotlight dir
+			lightsUBO.SetData(384, 12, glm::value_ptr(Camera::Get()->Position)); // Spotlight pos
+			lightsUBO.SetData(400, 12, glm::value_ptr(Camera::Get()->Front));	// Spotlight dir
 
 			// set light direction
 			ImGui::DragFloat3("Light direction", glm::value_ptr(lightDir), 0.1f, -5.0f, 5.0f);
@@ -383,24 +361,34 @@ int main() {
 			for (size_t i = 0; i < pointLightPositions.size(); i++)
 				lightsUBO.SetData(64 + i * 80, 12, glm::value_ptr(pointLightPositions[i]));
 		}
-
 		// clearing
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		ImGui::DragInt("Count", (int*)&count, 20.0f, 0, amount);
-
-		ImGui::Checkbox("Normal showing", &normalsToggled);
-
-		ImGui::DragFloat("lightSpaceSize", &lSS, 1.0f, 1.0f, 1000.0f);
-
-		for (int i = 0; i < pointLightPositions.size(); i++)
-			ImGui::DragFloat3(("Light " + std::to_string(i)).c_str(), glm::value_ptr(pointLightPositions[i]), 0.05f, -100.0f, 100.0f, nullptr, 1);
-
-		ImGui::DragFloat("Magnitude", &normalMagnitude, 0.1f, 0, 100);
-
-		ImGui::NewLine();
 
 		glEnable(GL_DEPTH_TEST);
-		level.Render();
+
+		if (editLevel) {
+			level.RenderEditingMode(blockEditingIndex);
+			level.RenderOneByOne();
+
+			// Draw a grid:
+			lightInstanced.Use();
+			lightInstanced.SetVec3("material.diff0", { 1.0f, 1.4f, 1.4f });
+			lineVAO.Bind();
+
+			glDrawArraysInstanced(GL_LINES, 0, 2, 201);
+		}
+		else {
+			if (level.UpdatePhysics(*(GrapplingCamera*)Camera::Get())) {
+				LevelNr++;
+				if (LevelNr == 2)
+					level = Level("Levels/Level2.dat", asteroidShader, shader);
+				if (LevelNr >= 3)
+					level = Level("Levels/Level3.dat", asteroidShader, shader);
+				Camera::Get()->Reset();
+				((GrapplingCamera*)Camera::Get())->Release();
+			}
+			level.Render();
+		}
 
 		// draw pointlights
 		{
@@ -416,15 +404,9 @@ int main() {
 				box.Draw(model, false);
 			}
 		}
-		// draw the asteroids
-		{
-			Profiler p("asteroid drawing");
-			Transform t;
 
-			// renderer.IDraw(rock, asteroidShader, count);
-			rock.DrawInstanced(*asteroidShader, count, Camera::Get().GetFrustum(), t);
-		}
 		// depth shenanigans: has to happen after everything, but before skybox
+		if (!editLevel)
 		{
 			float depth;
 			// After everything:
@@ -432,45 +414,25 @@ int main() {
 				glReadPixels(Window::Get().GetWidth() / 2, Window::Get().GetHeight() / 2, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
 
 				float zNorm = 2.0f * depth - 1.0f;
-				float zFar = Camera::Get().Options.ZFar;
-				float zNear = Camera::Get().Options.ZNear;
+				float zFar = Camera::Get()->Options.ZFar;
+				float zNear = Camera::Get()->Options.ZNear;
 				float zView = -2.0f * zNear * zFar / ((zFar - zNear) * zNorm - zNear - zFar);
 
-				spherePos = Camera::Get().Position + Camera::Get().Front * zView;
+				ImGui::Text("Distance: %f", zView);
 
-				if (zView < 200.0f)
-					Camera::Get().m_GrapplingHook.Launch(spherePos);
+				spherePos = Camera::Get()->Position + Camera::Get()->Front * zView;
+
+				if (zView < 80.0f)
+					((GrapplingCamera*)Camera::Get())->LaunchAt(spherePos);
 			}
 			else
-				Camera::Get().m_GrapplingHook.Release();
+				((GrapplingCamera*)Camera::Get())->Release();
 
 			glm::mat4 model(1.0f);
-			model = glm::translate(model, spherePos);
+			model = glm::translate(model, ((GrapplingCamera*)Camera::Get())->GrapplingPosition());
 			sphere.Draw(model, false);
 		}
 
-		// Last, draw the skybox:
-		{
-			Profiler p("skyBox drawing");
-
-			glDisable(GL_CULL_FACE); // disable face culling: this is because the vertex buffer I use (lightVAO) is focused on the outside, not on the inside, and it's not supposed to cull any faces anyway
-			glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content (as it's filled with ones as default)
-			skyBoxShader->Use();
-
-			glm::mat4 unTranslatedView(glm::mat3(Camera::Get().GetViewMatrix()));
-
-			skyBoxShader->SetMat4("ProjunTranslatedView", Camera::Get().GetProjMatrix() * unTranslatedView);
-
-			skyBoxShader->SetInt("skyBox", 0);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, skyBoxTex);
-
-			// renderer.Draw(box, skyBoxShader);
-			box.Draw(skyBoxMaterial.get(), {}, false);
-			glDepthFunc(GL_LESS); // set depth function back to default
-
-			glEnable(GL_CULL_FACE);
-		}
 #if ENABLE_BLOOM
 		if (bloomToggled)
 		{
@@ -540,14 +502,15 @@ int main() {
 		}
 #endif
 
+		if (ImGui::Button("Reset"))
+			Camera::Get()->Reset();
+
 		// frameBuffer render:
 		ImGui::DragFloat("exposure", &exposure, 0.01f, 0.0f, 10.0f);
 
 #if ENABLE_BLOOM
-		ImGui::Checkbox("Bloom", &bloomToggled);
-		if (bloomToggled != prevBloomToggled)
+		if (ImGui::Checkbox("Bloom", &bloomToggled))
 		{
-			prevBloomToggled = bloomToggled;
 			Framebuffers::PostProcessingShader->Use();
 			Framebuffers::PostProcessingShader->SetBool("bloom", bloomToggled);
 			Framebuffers::PostProcessingShader->SetInt("bloomBlur", 1);
@@ -557,12 +520,31 @@ int main() {
 			glDrawBuffers((int)bloomToggled + 1, attachments);
 		}
 #endif
+		static float crosshairSize = 0.1f;
+		ImGui::DragFloat("Crosshair size", &crosshairSize, 0.01f, 0.0f, 0.5f);
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		crosshairShader.Use();
+		crosshairShader.SetInt("crosshairTex", 7);
+		glBindTextureUnit(7, crosshair.ID);
+		crosshairShader.SetVec2("uSize", { crosshairSize / Window::Get().GetAspectRatio(), crosshairSize });
+
+		glDisable(GL_DEPTH_TEST);
+		Framebuffers::VAO->Bind();
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		//glEnable(GL_DEPTH_TEST);
+		glDisable(GL_BLEND);
+
 
 		// renderer.Finalize();
 
 		Framebuffers::Draw(exposure, Framebuffers::mainTex, bloomRTs[2]);
 		EndFrame();
 	}
+
 
 	Destroy();
 }

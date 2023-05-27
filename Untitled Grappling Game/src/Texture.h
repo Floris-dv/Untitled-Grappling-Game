@@ -20,9 +20,9 @@ static constexpr const char* const names[(int)TextureType::count] = {
 struct Texture {
 	unsigned int ID;
 	TextureType Type;
-	std::string Path;
+	std::filesystem::path Path;
 
-	Texture(unsigned int id, TextureType type, const std::string& path) : ID(id), Type(type), Path(path) {}
+	Texture(unsigned int id, TextureType type, const std::filesystem::path& path) : ID(id), Type(type), Path(path) {}
 	Texture() noexcept : ID(0), Type(TextureType::unknown) {}
 
 	friend bool operator==(const Texture& t1, const Texture& t2) {
@@ -41,10 +41,10 @@ struct LoadingTexture {
 	int Format;
 	int InternalFormat;
 
-	std::string Path;
+	std::filesystem::path Path;
 	TextureType Type;
 
-	LoadingTexture(const std::string& fname, TextureType type = TextureType::unknown);
+	LoadingTexture(const std::filesystem::path& fname, TextureType type = TextureType::unknown);
 
 	LoadingTexture(LoadingTexture&& t) noexcept : Data(std::move(t.Data)), Width(t.Width), Height(t.Height), Format(t.Format), InternalFormat(t.InternalFormat), Path(std::move(t.Path)), Type(t.Type) {}
 
@@ -74,7 +74,7 @@ public:
 	std::vector<Texture> GetTextures(TextureType type = TextureType::unknown);
 };
 
-std::future<LoadingTexture*> StartLoadingTexture(const std::string& path, TextureType type = TextureType::unknown);
+std::future<LoadingTexture*> StartLoadingTexture(const std::filesystem::path& path, TextureType type = TextureType::unknown);
 
 template<typename OStream>
 inline OStream& operator<<(OStream& output, Texture const& texture) {

@@ -10,11 +10,11 @@
 
 using namespace std::literals::chrono_literals;
 
-std::unordered_map<std::string, Texture> loadedPaths;
+std::unordered_map<std::filesystem::path, Texture> loadedPaths;
 
 std::mutex loadedPathsMtx;
 
-LoadingTexture::LoadingTexture(const std::string& fname, TextureType type) : Path(fname), Format(0), InternalFormat(0), Type(type) {
+LoadingTexture::LoadingTexture(const std::filesystem::path& fname, TextureType type) : Path(fname), Format(0), InternalFormat(0), Type(type) {
 	if (loadedPaths.contains(Path)) {
 		Height = -1;
 		Width = -1;
@@ -27,8 +27,11 @@ LoadingTexture::LoadingTexture(const std::string& fname, TextureType type) : Pat
 	}
 
 	int channels;
-
-	unsigned char* temp = stbi_load(Path.c_str(), &Width, &Height, &channels, 0);
+	stbi_uc* temp;
+	if constexpr (std::is_same_v<std::filesystem::path::value_type, char>)
+		temp = stbi_load((char*)Path.c_str(), &Width, &Height, &channels, 0);
+	else
+		temp = stbi_load(Path.string().c_str(), &Width, &Height, &channels, 0);
 	switch (channels) {
 	case 1:
 		Format = GL_RED;
@@ -43,7 +46,7 @@ LoadingTexture::LoadingTexture(const std::string& fname, TextureType type) : Pat
 		InternalFormat = GL_RGBA8;
 		break;
 	default:
-		NG_ERROR("Texture in file {} is weird: it has {} amount of channels, instead of the normal 1, 3, or 4", fname, channels);
+		NG_ERROR("Texture in file {} is weird: it has {} amount of channels, instead of the normal 1, 3, or 4. Error: {}", fname, channels, stbi_failure_reason());
 		break;
 	}
 
@@ -60,7 +63,7 @@ Texture LoadingTexture::Finish(TextureType FillInType, bool deleteAfter) {
 		return t;
 	}
 
-	Timer t("OpenGL loading of " + Path);
+	Timer t("OpenGL loading of " + Path.string());
 	read();
 
 	unsigned int textureID;
@@ -122,9 +125,9 @@ std::vector<Texture> LoadingTextures::GetTextures(TextureType type) {
 	return Textures;
 }
 
-std::future<LoadingTexture*> StartLoadingTexture(const std::string& path, TextureType type) {
+std::future<LoadingTexture*> StartLoadingTexture(const std::filesystem::path& path, TextureType type) {
 	// Path needs to be a copy, else classic 'reference to something that doesn't exist anymore'
-	return std::async(std::launch::async, [](const std::string path, TextureType type) {
+	return std::async(std::launch::async, [](const std::filesystem::path& path, TextureType type) {
 		// if it's not heap allocated, LoadingTexture will delete it's data, and then it's useless
 		try {
 			LoadingTexture* t = new LoadingTexture(path, type);
@@ -136,6 +139,6 @@ std::future<LoadingTexture*> StartLoadingTexture(const std::string& path, Textur
 		catch (const std::exception& e) {
 			NG_ERROR("{}", e.what());
 		}
-		return (LoadingTexture*)nullptr; // To help the type deducing
+		return (LoadingTexture*)nullptr; // To help the type deducing of std::async
 		}, path, type);
 }

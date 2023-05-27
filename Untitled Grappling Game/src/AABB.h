@@ -1,5 +1,4 @@
 #pragma once
-#include <glm/glm.hpp>
 #include "Transform.h"
 #include <assimp/aabb.h>
 

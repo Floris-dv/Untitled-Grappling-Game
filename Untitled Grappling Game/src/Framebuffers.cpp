@@ -156,7 +156,7 @@ void Framebuffers::size_callback(uint32_t width, uint32_t height) noexcept {
 	// make sure the viewport matches the new Window::Get() dimensions
 	glViewport(0, 0, width, height);
 
-	Camera::Get().AspectRatio = (float)width / (float)height;
+	Camera::Get()->AspectRatio = (float)width / (float)height;
 
 	// main framebuffer updating
 	Reset();

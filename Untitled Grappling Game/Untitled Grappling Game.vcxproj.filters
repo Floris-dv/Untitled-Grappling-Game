@@ -63,13 +63,16 @@
     <ClCompile Include="vendor\Vendor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vendor\ImGuiBuild.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Level.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\GrapplingHook.cpp">
+    <ClCompile Include="vendor\ImGuiBuild.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\EditingCamera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\GrapplingCamera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -88,6 +91,9 @@
     <None Include="src\Maybe Later\Shadows\Shadow.vert" />
     <None Include="src\Maybe Later\Deferred Shading\SkyboxGBuffer.frag" />
     <None Include="src\Maybe Later\Shadows\ShadowCalculation.frag" />
+    <None Include="src\Shaders\LightInstanced.vert" />
+    <None Include="src\Shaders\Crosshair.frag" />
+    <None Include="src\Shaders\Crosshair.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Vendor\imgui\imconfig.h">
@@ -174,13 +180,16 @@
     <ClInclude Include="src\Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\assimp\config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Level.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\GrapplingHook.h">
+    <ClInclude Include="src\SaveFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\EditingCamera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\GrapplingCamera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,8 +1,4 @@
 #pragma once
-
-#include <glm/glm.hpp> //glm::mat4
-#include <glm/gtc/matrix_transform.hpp>
-
 class Transform
 {
 protected:
@@ -14,7 +10,7 @@ protected:
 	//Global space informaiton concatenate in matrix, just for caching
 	mutable glm::mat4 m_ModelMatrix = glm::mat4(1.0f);
 
-	//Dirty flag, just for caching
+	// Dirty flag, just for caching
 	mutable bool m_IsDirty = false;
 
 protected:

@@ -1,19 +1,15 @@
 #pragma once
-
 // Header file for vertex data generation and data:
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+
 #include "Vertex.h"
 
 // Simple sphere generation, not anything fancy
-static std::pair<std::vector<MinimalVertex>, std::vector<unsigned int>> CreateSphere(size_t stacks, size_t slices);
-
-// Perlin noise with marching cubes mesh generation
-std::vector<MinimalVertex> GenerateMesh(int xSize, int ySize, int zSize);
+static std::pair<std::vector<MinimalVertex>, std::vector<GLuint>> CreateSphere(size_t stacks, size_t slices);
 
 static void GenerateModelMatricesInRing(const unsigned int amount, glm::mat4* modelMatrices, const float radius, const float displacement);
 
-constexpr std::array<SimpleVertex, 36> boxVertices = { {
+// Can't be constexpr because it's used by a span. Should not be modified
+inline std::array<SimpleVertex, 36> boxVertices = { {
 		// Positions				// Normals				// Texture coords
 		// Front face
 		{{-1.0f, -1.0f,  1.0f},		{0.0f, 0.0f,  1.0f},	{0.0f, 0.0f}},
@@ -78,14 +74,14 @@ constexpr std::array<Vertex, 6> floorVertices = { {
 constexpr std::array<float, 120> lightData = { {
 		// Dirlight:
 		-0.2f, -1.0f, -0.3f,    0.0f,	// direction (+ padding)
-		0.2f, 0.2f, 0.2f,		0.0f,	// ambient (+ padding)
-		1.0f, 1.0f, 1.0f,       0.0f,	// diffuse (+ padding)
-		0.5f, 0.5f, 0.5f,       0.0f,	// specular (+ padding)
+		0.8f, 0.8f, 0.8f,		0.0f,	// ambient (+ padding)
+		0.2f, 0.2f, 0.2f,       0.0f,	// diffuse (+ padding)
+		0.0f, 0.0f, 0.0f,       0.0f,	// specular (+ padding)
 
 		// Pointlight[0]:
 		0.7f, 0.2f, 2.0f,		0.0f,	// position (+ padding)
 		0.05f, 0.05f, 0.05f,	0.0f,	// ambient (+ padding)
-		2.0f, 2.0f, 2.0f,       0.0f,	// diffuse (+ padding)
+		1.0f, 1.0f, 1.0f,       0.0f,	// diffuse (+ padding)
 		0.1f, 0.1f, 0.1f,		0.0f,	// specular (+ padding)
 		0.09f,							// linear;
 		0.032f,							// quadratic;
@@ -94,7 +90,7 @@ constexpr std::array<float, 120> lightData = { {
 		// Pointlight[1]:
 		2.3f, -0.5f, -3.3f,		0.0f,	// position (+ padding)
 		0.05f, 0.05f, 0.05f,	0.0f,	// ambient (+ padding)
-		2.0f, 2.0f, 2.0f,       0.0f,	// diffuse (+ padding)
+		1.0f, 1.0f, 1.0f,       0.0f,	// diffuse (+ padding)
 		0.1f, 0.1f, 0.1f,		0.0f,	// specular (+ padding)
 		0.09f,							// linear;
 		0.032f,							// quadratic;
@@ -123,7 +119,7 @@ constexpr std::array<float, 120> lightData = { {
 		0.0f, 0.0f, -1.0f,		0.0f,	// direction (+ padding)
 		0.0f, 0.0f, 0.0f,		0.0f,	// ambient (+ padding)
 		10.0f, 10.0f, 10.0f,	0.0f,	// diffuse (+ padding)
-		2.0f, 2.0f, 2.0f,		0.0f,	// specular (+ padding)
+		2.0f, 2.0f, 2.0f,	// specular (+ padding)
 
 		0.09f,							// linear
 		0.032f,							// quadratic
@@ -162,7 +158,7 @@ static std::pair<std::vector<MinimalVertex>, std::vector<unsigned int>> CreateSp
 	vertices.reserve(stacks * slices * 2);
 
 	// Calc The Index Positions
-	for (int i = 0; i < slices * stacks + slices; ++i) {
+	for (size_t i = 0; i < slices * stacks + slices; ++i) {
 		indices.push_back((unsigned int)(i * 2));
 		indices.push_back((unsigned int)((i + slices + 1) * 2));
 		indices.push_back((unsigned int)((i + slices) * 2));

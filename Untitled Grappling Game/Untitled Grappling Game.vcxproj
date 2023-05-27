@@ -111,7 +111,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\GrapplingHook.cpp" />
+    <ClCompile Include="src\GrapplingCamera.cpp" />
+    <ClCompile Include="src\EditingCamera.cpp" />
     <ClCompile Include="src\Level.cpp" />
     <ClCompile Include="src\AABB.cpp" />
     <ClCompile Include="src\Camera.cpp" />
@@ -130,10 +131,13 @@
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\Texture.cpp" />
     <ClCompile Include="src\Window.cpp" />
-    <ClCompile Include="vendor\Vendor.cpp" />
     <ClCompile Include="vendor\ImGuiBuild.cpp" />
+    <ClCompile Include="vendor\Vendor.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="src\Shaders\Crosshair.frag" />
+    <None Include="src\Shaders\Crosshair.vert" />
+    <None Include="src\Shaders\LightInstanced.vert" />
     <None Include="src\Maybe Later\Shadows\ShadowCalculation.frag" />
     <CustomBuild Include="src\Shaders\Bloom.comp">
       <FileType>Document</FileType>
@@ -360,10 +364,10 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\GrapplingHook.h" />
+    <ClInclude Include="src\GrapplingCamera.h" />
+    <ClInclude Include="src\EditingCamera.h" />
     <ClInclude Include="src\Level.h" />
     <ClInclude Include="src\AABB.h" />
-    <ClInclude Include="src\assimp\config.h" />
     <ClInclude Include="src\DataBuffers.h" />
     <ClInclude Include="src\Framebuffers.h" />
     <ClInclude Include="src\Log.h" />
@@ -372,6 +376,7 @@
     <ClInclude Include="src\Object.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\Renderer.h" />
+    <ClInclude Include="src\SaveFile.h" />
     <ClInclude Include="src\Transform.h" />
     <ClInclude Include="src\Vertex.h" />
     <ClInclude Include="src\VertexData.h" />

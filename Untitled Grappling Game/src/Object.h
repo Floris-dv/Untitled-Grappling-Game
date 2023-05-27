@@ -26,24 +26,16 @@ public:
 
 	Object<T>& operator=(const Object& other) = delete;
 
-	template<std::size_t VBOSize, size_t IBOSize = 0>
-	Object(std::shared_ptr<Material> material, const std::array<T, VBOSize>& vertices, const BufferLayout& bufferLayout, const std::array<GLuint, IBOSize>& indices = std::array<GLuint, 0>())
-		: m_Material(std::move(material)), m_UseIBO(!indices.empty()), m_VBO(vertices.size() * sizeof(T), vertices.data())
-	{
-		VAO.AddBuffer(m_VBO, bufferLayout);
+	//template<std::size_t VBOSize, size_t IBOSize = 0>
+	//Object(std::shared_ptr<Material> material, const std::array<T, VBOSize>& vertices, const BufferLayout& bufferLayout, const std::array<GLuint, IBOSize>& indices = std::array<GLuint, 0>());
 
-		if (m_UseIBO) {
-			m_NumVerts = indices.size();
-			m_IBO = IndexBuffer(m_NumVerts * sizeof(unsigned int), indices.data());
-			VAO.AddIndexBuffer(m_IBO);
-		}
-		else
-			m_NumVerts = vertices.size();
-	}
+	//Object(std::shared_ptr<Material> material, const std::vector<T>& vertices, const BufferLayout& bufferLayout, const std::vector<GLuint>& indices);
 
-	Object(std::shared_ptr<Material> material, const std::vector<T>& vertices, const BufferLayout& bufferLayout, const std::vector<GLuint>& indices);
+	//Object(std::shared_ptr<Material> material, const std::vector<T>& vertices, const BufferLayout& bufferLayout);
 
-	Object(std::shared_ptr<Material> material, const std::vector<T>& vertices, const BufferLayout& bufferLayout);
+	Object(std::shared_ptr<Material> material, const std::span<T> vertices, const BufferLayout& bufferLayout, const std::span<GLuint> indices);
+
+	Object(std::shared_ptr<Material> material, const std::span<T> vertices, const BufferLayout& bufferLayout) : Object(material, vertices, bufferLayout, std::span<GLuint, 0>()) {}
 
 	void Draw(const glm::mat4& modelMatrix, bool setMaterial) { Draw(m_Material.get(), modelMatrix, setMaterial); }
 
@@ -72,24 +64,24 @@ static const BufferLayout instanceBufferLayout = {
 	},
 	true
 };
-
-template<typename T>
-Object<T>::Object(std::shared_ptr<Material> material, const std::vector<T>& vertices, const BufferLayout& bufferLayout)
-	: m_Material(std::move(material)), m_NumVerts(vertices.size()), m_VBO(vertices.size() * sizeof(T), vertices.data())
-{
-	VAO.AddBuffer(m_VBO, bufferLayout);
-}
-
-template<typename T>
-Object<T>::Object(std::shared_ptr<Material> material, const std::vector<T>& vertices, const BufferLayout& bufferLayout, const std::vector<GLuint>& indices)
-	: m_Material(std::move(material)), m_UseIBO(true),
-	m_VBO(vertices.size() * sizeof(T), vertices.data()),
-	m_IBO(indices.size() * sizeof(GLuint), indices.data()),
-	m_NumVerts(indices.size())
-{
-	VAO.AddBuffer(m_VBO, bufferLayout);
-	VAO.AddIndexBuffer(m_IBO);
-}
+//
+//template<typename T>
+//Object<T>::Object(std::shared_ptr<Material> material, const std::vector<T>& vertices, const BufferLayout& bufferLayout)
+//	: m_Material(std::move(material)), m_NumVerts(vertices.size()), m_VBO(vertices.size() * sizeof(T), vertices.data())
+//{
+//	VAO.AddBuffer(m_VBO, bufferLayout);
+//}
+//
+//template<typename T>
+//Object<T>::Object(std::shared_ptr<Material> material, const std::vector<T>& vertices, const BufferLayout& bufferLayout, const std::vector<GLuint>& indices)
+//	: m_Material(std::move(material)), m_UseIBO(true),
+//	m_VBO(vertices.size() * sizeof(T), vertices.data()),
+//	m_IBO(indices.size() * sizeof(GLuint), indices.data()),
+//	m_NumVerts(indices.size())
+//{
+//	VAO.AddBuffer(m_VBO, bufferLayout);
+//	VAO.AddIndexBuffer(m_IBO);
+//}
 
 template<typename T>
 void Object<T>::Draw(Material* material, const glm::mat4& modelMatrix, bool setMaterial) {
@@ -143,4 +135,35 @@ Object<T>& Object<T>::operator=(Object<T>&& other) noexcept {
 	std::swap(m_UseIBO, other.m_UseIBO);
 
 	return *this;
+}
+//
+//template<typename T>
+//template<std::size_t VBOSize, size_t IBOSize>
+//inline Object<T>::Object(std::shared_ptr<Material> material, const std::array<T, VBOSize>& vertices, const BufferLayout& bufferLayout, const std::array<GLuint, IBOSize>& indices)
+//	: m_Material(std::move(material)), m_UseIBO(!indices.empty()), m_VBO(vertices.size() * sizeof(T), vertices.data())
+//{
+//	VAO.AddBuffer(m_VBO, bufferLayout);
+//
+//	if (m_UseIBO) {
+//		m_NumVerts = indices.size();
+//		m_IBO = IndexBuffer(m_NumVerts * sizeof(unsigned int), indices.data());
+//		VAO.AddIndexBuffer(m_IBO);
+//	}
+//	else
+//		m_NumVerts = vertices.size();
+//}
+
+template<typename T>
+inline Object<T>::Object(std::shared_ptr<Material> material, const std::span<T> vertices, const BufferLayout& bufferLayout, const std::span<GLuint> indices) :
+	m_Material(std::move(material)), m_UseIBO(!indices.empty()), m_VBO(vertices.size_bytes(), vertices.data())
+{
+	VAO.AddBuffer(m_VBO, bufferLayout);
+
+	if (m_UseIBO) {
+		m_NumVerts = indices.size();
+		m_IBO = IndexBuffer(indices.size_bytes(), indices.data());
+		VAO.AddIndexBuffer(m_IBO);
+	}
+	else
+		m_NumVerts = vertices.size();
 }

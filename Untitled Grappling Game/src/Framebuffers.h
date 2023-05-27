@@ -4,7 +4,7 @@
 
 #include "DataBuffers.h"
 
-#include <glm/glm.hpp>
+
 #include "Window.h"
 
 namespace Framebuffers {

@@ -1,12 +1,19 @@
 #pragma once
 
+#define NOMINMAX
+
+// Files/streams
+#include <fstream>
+#include <filesystem>
+#include <sstream>
+#include <iostream>
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+#include <locale>
+
 // Containers:
 #include <string_view>
 #include <string>
-#include <fstream>
-#include <filesystem>
 #include <optional>
-#include <sstream>
 #include <span>
 #include <set>
 #include <array>
@@ -29,6 +36,12 @@
 #include <chrono>
 #include <numeric>
 #include <cmath>
-#include <iostream>
 #include <cstdlib>
 #include <limits>
+
+// GLM
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#undef NOMINMAX

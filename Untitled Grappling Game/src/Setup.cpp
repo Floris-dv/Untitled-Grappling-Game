@@ -9,12 +9,14 @@
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 
+#include <imguizmo/ImGuizmo.h>
+
 // settings
 #include "Settings.h"
 
 #include "Setup.h"
-// Camera::Get()
 #include "Camera.h"
+#include "GrapplingCamera.h"
 
 // for Framebuffers setup, also sets framebuffer_size_callback:
 #include "Framebuffers.h"
@@ -34,31 +36,23 @@ static bool FirstFrame = true;
 bool GammaCorrection = true;
 bool fullScreen = false;
 
-// to get to movement speed right
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
-
-// to give framerate, is the summed up deltatime of the last 40 frames, in seconds
-float dTime40 = 0.0f;
-
-float now;
-
 // different as else you don't get smooth movement, and let diagonal in
-static void updateMovement() {
+static void updateMovement(float deltaTime) {
 	if (ImGui::IsWindowFocused(4) || ImGui::IsAnyItemFocused()) {
-		Camera::Get().UpdateCameraVectors(deltaTime);
+		Camera::Get()->UpdateCameraVectors(deltaTime);
 		return;
 	}
 
-	unsigned int movement = MOVEMENT_NONE;
-	movement |= (Window::Get().GetKeyPressed(KEY_W) || Window::Get().GetKeyPressed(KEY_UP)) * MOVEMENT_FORWARD;
-	movement |= (Window::Get().GetKeyPressed(KEY_A) || Window::Get().GetKeyPressed(KEY_LEFT)) * MOVEMENT_LEFT;
-	movement |= (Window::Get().GetKeyPressed(KEY_S) || Window::Get().GetKeyPressed(KEY_DOWN)) * MOVEMENT_BACKWARD;
-	movement |= (Window::Get().GetKeyPressed(KEY_D) || Window::Get().GetKeyPressed(KEY_RIGHT)) * MOVEMENT_RIGHT;
-	movement |= Window::Get().GetKeyPressed(KEY_SPACE) * MOVEMENT_UP;
+	unsigned int movement = Camera::MOVEMENT_NONE;
+	movement |= (Window::Get().GetKeyPressed(KEY_W) || Window::Get().GetKeyPressed(KEY_UP)) * Camera::MOVEMENT_FORWARD;
+	movement |= (Window::Get().GetKeyPressed(KEY_A) || Window::Get().GetKeyPressed(KEY_LEFT)) * Camera::MOVEMENT_LEFT;
+	movement |= (Window::Get().GetKeyPressed(KEY_S) || Window::Get().GetKeyPressed(KEY_DOWN)) * Camera::MOVEMENT_BACKWARD;
+	movement |= (Window::Get().GetKeyPressed(KEY_D) || Window::Get().GetKeyPressed(KEY_RIGHT)) * Camera::MOVEMENT_RIGHT;
+	movement |= Window::Get().GetKeyPressed(KEY_SPACE) * Camera::MOVEMENT_UP;
+	movement |= Window::Get().GetKeyPressed(KEY_LEFT_SHIFT) * Camera::MOVEMENT_DOWN;
 
-	Camera::Get().ProcessKeyboard((Camera_Movement)movement, deltaTime);
-	Camera::Get().UpdateCameraVectors(deltaTime);
+	Camera::Get()->ProcessKeyboard((Camera::Camera_Movement)movement, deltaTime);
+	Camera::Get()->UpdateCameraVectors(deltaTime);
 
 	return;
 }
@@ -94,7 +88,7 @@ void Setup() {
 		lastX = fxpos;
 		lastY = fypos;
 
-		Camera::Get().ProcessMouseMovement(xoffset, yoffset);
+		Camera::Get()->ProcessMouseMovement(xoffset, yoffset);
 	};
 
 	Window::Get().GetFunctions().KeyPressFn = [](Key key, int scanCode, Action action, int mods) {
@@ -106,26 +100,17 @@ void Setup() {
 				paused = !paused;
 				Window::Get().SetCursor(paused);
 				return;
-			case KEY_E:
-				GammaCorrection = !GammaCorrection;
-				if (!GammaCorrection)
-					glDisable(GL_FRAMEBUFFER_SRGB);
-				else
-					glEnable(GL_FRAMEBUFFER_SRGB);
-				return;
 			}
 		}
 	};
 
 	Window::Get().GetFunctions().ScrollFn = [](float xOffset, float yOffset) {
-		Camera::Get().ProcessMouseScroll(xOffset, yOffset);
+		Camera::Get()->ProcessMouseScroll(xOffset, yOffset);
 	};
 
 	Framebuffers::Setup();
 
 	// Shadows::Setup();
-
-	Camera::Initialize(Camera::CameraOptions{ 2.5f, 0.1f, 90.0f, 0.1f, 500.0f, 200.0f }, (float)Window::Get().GetWidth() / (float)Window::Get().GetHeight());
 }
 
 void Destroy() {
@@ -135,6 +120,10 @@ void Destroy() {
 }
 
 void StartFrame() {
+	static float deltaTime = 0.0f;
+	static float now = 0.0f;
+	static float lastFrame = 0.0f;
+	static float dTime40 = 0.0f;
 	now = Window::Get().GetTime(); // returns in seconds
 
 	// movement:
@@ -154,17 +143,16 @@ void StartFrame() {
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 
+	ImGuizmo::BeginFrame();
+
 	ImGui::Text("Starting frame: %f", deltaTime);
 
-	updateMovement();
-
+	updateMovement(deltaTime);
 }
 
 void EndFrame() {
 	// Render ImGui
-	std::string frameRate = std::to_string((int)std::round(1.0f / dTime40 * 40.0f));
-	ImGui::Text(frameRate.c_str());
-	ImGui::Text("Frame took %f ms", dTime40 / 40.0f * 1000.0f);
+	ImGui::Text("%f", ImGui::GetIO().Framerate);
 
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

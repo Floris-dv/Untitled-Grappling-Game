@@ -1,6 +1,5 @@
 #pragma once
 #include "Shader.h"
-#include <glm/glm.hpp>
 #include <glad/glad.h>
 
 class VertexBuffer

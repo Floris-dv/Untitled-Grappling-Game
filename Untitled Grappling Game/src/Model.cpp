@@ -8,9 +8,6 @@
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/material.inl>
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #pragma warning(pop)
 
 #include <DebugBreak.h>
@@ -269,7 +266,7 @@ void Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 			maps = LoadTexturesFromType(material, aiTextureType_AMBIENT, TextureType::height);
 			m_Textures.insert(m_Textures.end(), maps.begin(), maps.end());
 		}
-	}
+}
 
 	// process vertices
 	for (unsigned int i = 0; i < mesh->mNumVertices; i++) {

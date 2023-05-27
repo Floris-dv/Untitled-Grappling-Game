@@ -52,7 +52,11 @@ public:
 	uint32_t GetWidth() const { return m_Props.Width; }
 	uint32_t GetHeight() const { return m_Props.Height; }
 
+	float GetAspectRatio() const { return (float)GetWidth() / (float)GetHeight(); }
+
 	WindowFunctions& GetFunctions() { return m_Props.Functions; }
+
+	void SetKey(Key key, std::function<void(void)> function);
 
 	void SetVSync(bool vSync);
 	bool IsVSync() const { return m_Props.VSync; }
@@ -70,6 +74,10 @@ public:
 	void SetShouldClose(bool shouldClose = true);
 
 	bool GetKeyPressed(Key key);
+
+	auto GetKeyMap(Key key) { return m_KeyMap.equal_range(key); }
+
+	GLFWwindow* GetGLFWWindow() { return m_Window; }
 
 	bool GetMouseButtonDown(int button);
 
@@ -96,6 +104,8 @@ private:
 
 	WindowProps m_Props;
 	GLFWwindow* m_Window = nullptr;
+
+	std::unordered_multimap<Key, std::function<void(void)>> m_KeyMap;
 
 	void Init(const WindowProps& props);
 	static Window* s_Window;
