@@ -74,8 +74,8 @@ void Setup() {
 			// if the left mouse button is pressed: continue what you were doing
 			if (Window::Get().GetMouseButtonDown(0)) {
 				// unless over an ImGUI window or its items (those are counted seperately when focused)
-				// if (!(ImGui::IsWindowFocused(4) || ImGui::IsAnyItemFocused())) // 4 means: is any window hovered
-				goto out;  // I know this isn't recommended, but if I avoid it it makes for some ugly code
+				if (!(ImGui::IsWindowFocused(4) || ImGui::IsAnyItemFocused())) // 4 means: is any window focused
+					goto out;  // I know this isn't recommended, but if I avoid it it makes for some ugly code
 			}
 
 			lastX = fxpos;

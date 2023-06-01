@@ -63,7 +63,7 @@ VertexArray::VertexArray(bool actuallyGenerateNow) {
 		m_ID = 0;
 }
 
- VertexArray::~VertexArray() {
+VertexArray::~VertexArray() {
 	if (m_ID)
 		glDeleteVertexArrays(1, &m_ID);
 }
@@ -86,6 +86,11 @@ void VertexArray::UnBind() const {
 }
 
 void VertexArray::AddBuffer(const VertexBuffer& VBO, const BufferLayout& layout) {
+	AddBuffer(VBO, layout, m_VBIndex++);
+}
+
+void VertexArray::AddBuffer(const VertexBuffer& VBO, const BufferLayout& layout, unsigned int VBIndex)
+{
 	Bind();
 	VBO.Bind();
 
@@ -94,17 +99,16 @@ void VertexArray::AddBuffer(const VertexBuffer& VBO, const BufferLayout& layout)
 		LayoutElement e = layout.GetElements()[i];
 		int j = layout.GetStartIndex() + i;
 		glEnableVertexArrayAttrib(m_ID, j);
-		glVertexArrayAttribBinding(m_ID, j, m_VBIndex);
+		glVertexArrayAttribBinding(m_ID, j, VBIndex);
+		int x = 0;
 		glVertexArrayAttribFormat(m_ID, j, e.Count, e.Type, e.Normalized ? GL_TRUE : GL_FALSE, offset);
 
 		offset += e.GetSize();
 	}
-	glVertexArrayVertexBuffer(m_ID, m_VBIndex, VBO.ID(), 0, layout.GetStride());
+	glVertexArrayVertexBuffer(m_ID, VBIndex, VBO.ID(), 0, layout.GetStride());
 
 	if (layout.GetInstanced())
-		glVertexArrayBindingDivisor(m_ID, m_VBIndex, 1);
-
-	m_VBIndex++;
+		glVertexArrayBindingDivisor(m_ID, VBIndex, 1);
 }
 
 void VertexArray::AddIndexBuffer(const IndexBuffer& IBO) {

@@ -111,6 +111,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Endscreen.cpp" />
     <ClCompile Include="src\GrapplingCamera.cpp" />
     <ClCompile Include="src\EditingCamera.cpp" />
     <ClCompile Include="src\Level.cpp" />
@@ -364,12 +365,14 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Endscreen.h" />
     <ClInclude Include="src\GrapplingCamera.h" />
     <ClInclude Include="src\EditingCamera.h" />
     <ClInclude Include="src\Level.h" />
     <ClInclude Include="src\AABB.h" />
     <ClInclude Include="src\DataBuffers.h" />
     <ClInclude Include="src\Framebuffers.h" />
+    <ClInclude Include="src\Levels.h" />
     <ClInclude Include="src\Log.h" />
     <ClInclude Include="src\Material.h" />
     <ClInclude Include="src\MultiMesh.h" />

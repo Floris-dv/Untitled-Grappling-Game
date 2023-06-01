@@ -29,6 +29,8 @@
 #include "SaveFile.h"
 #include "GrapplingCamera.h"
 #include "EditingCamera.h"
+#include "Endscreen.h"
+#include "Levels.h"
 
 #include "Framebuffers.h"
 
@@ -120,10 +122,10 @@ int main() {
 	// Renderer renderer(WIDTH, HEIGHT);
 
 	std::array<glm::vec3, 4> pointLightPositions = {
-	  glm::vec3(0.7f,  -6.8f,  5.0f),
-	  glm::vec3(2.3f, -0.5f, -3.3f),
-	  glm::vec3(-1.3f,  0.4f,  2.0f),
-	  glm::vec3(0.0f,  0.0f, -3.0f)
+		glm::vec3(0.7f,  -6.8f,  5.0f),
+		glm::vec3(2.3f, -0.5f, -3.3f),
+		glm::vec3(-1.3f,  0.4f,  2.0f),
+		glm::vec3(0.0f,  0.0f, -3.0f)
 	};
 
 	// This would be WAY better with #embed
@@ -244,6 +246,8 @@ int main() {
 	}
 
 	int LevelNr = 1;
+
+	Endscreen endScreen;// ("Level 1", std::chrono::milliseconds::zero());
 
 	Level level("Levels/Level1.dat", asteroidShader, shader);
 
@@ -366,6 +370,8 @@ int main() {
 
 		glEnable(GL_DEPTH_TEST);
 
+		ImGui::Text("Time: %f", level.GetStartTime());
+
 		if (editLevel) {
 			level.RenderEditingMode(blockEditingIndex);
 			level.RenderOneByOne();
@@ -379,15 +385,23 @@ int main() {
 		}
 		else {
 			if (level.UpdatePhysics(*(GrapplingCamera*)Camera::Get())) {
-				LevelNr++;
-				if (LevelNr == 2)
-					level = Level("Levels/Level2.dat", asteroidShader, shader);
-				if (LevelNr >= 3)
-					level = Level("Levels/Level3.dat", asteroidShader, shader);
+				endScreen = Endscreen("Level", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>(glfwGetTime() - level.GetStartTime())));
 				Camera::Get()->Reset();
 				((GrapplingCamera*)Camera::Get())->Release();
 			}
+			switch (endScreen.GetState()) {
+			case Endscreen::State::Next_Level:
+				LevelNr++;
+				level = Level(GetLevelByNr(LevelNr), asteroidShader, shader);
+				endScreen.Close();
+				break;
+			case Endscreen::State::Restart:
+				level = Level(GetLevelByNr(LevelNr), asteroidShader, shader);
+				endScreen.Close();
+				break;
+			}
 			level.Render();
+			endScreen.Render();
 		}
 
 		// draw pointlights
@@ -545,6 +559,7 @@ int main() {
 		EndFrame();
 	}
 
+	endScreen.Close();
 
 	Destroy();
 }

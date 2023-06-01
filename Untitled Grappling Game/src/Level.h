@@ -47,7 +47,9 @@ public:
 	bool UpdatePhysics(GrapplingCamera& camera);
 
 	// Needs to be called when switching from RenderOneByOne() to Render()
-	void UpdateInstanceVBO() { SetupÍnstanceVBO(); }
+	void UpdateInstanceVBO();
+
+	double GetStartTime() { return m_StartTime; }
 
 private:
 	// First block: finish box, Second block (by convention): startplatform
@@ -59,6 +61,10 @@ private:
 	std::unique_ptr<Material> m_FinishMaterial;
 
 	VertexBuffer m_InstanceVBO;
+
+	double m_StartTime = 0.0;
+
+	// TODO: add a level name here
 
 	std::string m_FileName;
 

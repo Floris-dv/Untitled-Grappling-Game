@@ -190,5 +190,6 @@ public:
 	void UnBind() const;
 
 	void AddBuffer(const VertexBuffer& VBO, const BufferLayout& layout);
+	void AddBuffer(const VertexBuffer& VBO, const BufferLayout& layout, unsigned int VBIndex);
 	void AddIndexBuffer(const IndexBuffer& IBO);
 };

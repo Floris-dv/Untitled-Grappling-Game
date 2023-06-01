@@ -8,6 +8,7 @@
 #include "SaveFile.h"
 #include "Window.h"
 #include "GrapplingCamera.h"
+#include <glm/gtx/norm.hpp>
 
 template<typename OStream>
 inline OStream& operator<<(OStream& output, Level::Block const& input) {
@@ -27,8 +28,8 @@ inline IStream& operator>>(IStream& input, Level::Block& output) {
 	return input;
 }
 
-Level::Level(const glm::vec3& startPlatformSize, const Block& finishBox, std::vector<Block>&& blocks, std::unique_ptr<Material>&& instancedMaterial, std::unique_ptr<Material>&& normalMaterial, std::unique_ptr<Material>&& finishMaterial) :
-	m_Blocks(std::move(blocks)), m_InstancedMaterial(std::move(instancedMaterial)), m_Material(std::move(normalMaterial)), m_FinishMaterial(std::move(finishMaterial)), m_AllowEditing(true)
+Level::Level(const glm::vec3& startPlatformSize, const Block& finishBox, std::vector<Block>&& blocks, std::unique_ptr<Material>&& instancedMaterial, std::unique_ptr<Material>&& normalMaterial, std::unique_ptr<Material>&& finishMaterial)
+	: m_Blocks(std::move(blocks)), m_InstancedMaterial(std::move(instancedMaterial)), m_Material(std::move(normalMaterial)), m_FinishMaterial(std::move(finishMaterial)), m_AllowEditing(true)
 {
 	m_Blocks.insert(m_Blocks.begin(), { finishBox, { { -startPlatformSize.x * 0.5f, -startPlatformSize.y, -startPlatformSize.z * 0.5f}, {startPlatformSize.x * 0.5f, 0.0f, startPlatformSize.z * 0.5f} } });
 	SetupMatrices();
@@ -77,7 +78,7 @@ void Level::Write(std::string_view levelFile)
 
 void Level::Render(Material* material, Material* finishMaterial) {
 	Block::Object.DrawInstanced(material, true, m_Matrices.size() - 1); // finish box needs to be another color
-	Block::Object.Draw(finishMaterial, m_Matrices.back(), true);
+	Block::Object.Draw(finishMaterial, m_Matrices.front(), true);
 }
 
 void Level::RenderOneByOne()
@@ -206,29 +207,40 @@ static void BounceOn(const Level::Block& block, GrapplingCamera& camera);
 
 bool Level::UpdatePhysics(GrapplingCamera& camera)
 {
+	if (m_StartTime == 0.0f && (glm::abs(camera.Vel.x) + glm::abs(camera.Vel.z)) > 0.0f) {
+		m_StartTime = glfwGetTime();
+	}
+
 	OBB cameraBox{};
 	cameraBox.pos = camera.PhysicsPosition;
 	// camera box has no rotation
 	// TODO: add better constant factor for the camera block here
 	cameraBox.halfSize = glm::vec3{ 0.2f };
 
-	for (const Level::Block& block : std::views::take(m_Blocks, m_Blocks.size() - 1)) {
+	for (const Level::Block& block : std::views::drop(m_Blocks, 1)) {
 		if (CollisionCheck(cameraBox, OBB(block))) {
 			ImGui::Text("Inside!!!");
 			BounceOn(block, camera);
 		}
 	}
 
-	if (CollisionCheck(cameraBox, OBB(m_Blocks.back())))
+	if (CollisionCheck(cameraBox, OBB(m_Blocks.front())))
 		return true;
 
 	return false;
 }
 
+// Needs to be called when switching from RenderOneByOne() to Render()
+
+void Level::UpdateInstanceVBO() {
+	glNamedBufferData(m_InstanceVBO.ID(), (m_Matrices.size() - 1) * sizeof(m_Matrices[0]), &m_Matrices[1], GL_STATIC_DRAW);
+}
+
 void Level::SetupÍnstanceVBO()
 {
+	Block::Object.VAO.Bind();
+
 	std::shared_ptr<Material> s(nullptr);
-	// TODO: don't include the last matrix (that uses another shader
 	m_InstanceVBO = VertexBuffer((m_Matrices.size() - 1) * sizeof(m_Matrices[0]), &m_Matrices[1]);
 
 	if (!Block::Object.IsValid())
@@ -258,19 +270,16 @@ void Level::SetupMatrices()
 
 // Helper functions
 
-static float sum(const glm::vec3& vec) {
-	return vec.x + vec.y + vec.z;
-}
-
 static bool GetSeparatingPlane(const glm::vec3& rPos, const glm::vec3& plane, const OBB& box1, const OBB& box2) {
 	using glm::abs;
-	return ((abs(sum(rPos * plane)) >
-		(abs(sum((box1.axisX * box1.halfSize[0]) * plane)) +
-			abs(sum((box1.axisY * box1.halfSize[1]) * plane)) +
-			abs(sum((box1.axisZ * box1.halfSize[2]) * plane)) +
-			abs(sum((box2.axisX * box2.halfSize[0]) * plane)) +
-			abs(sum((box2.axisY * box2.halfSize[1]) * plane)) +
-			abs(sum((box2.axisZ * box2.halfSize[2]) * plane)))));
+	using glm::compAdd; // Adds all the components individually together
+	return ((abs(compAdd(rPos * plane)) >
+		(abs(compAdd((box1.axisX * box1.halfSize[0]) * plane)) +
+			abs(compAdd((box1.axisY * box1.halfSize[1]) * plane)) +
+			abs(compAdd((box1.axisZ * box1.halfSize[2]) * plane)) +
+			abs(compAdd((box2.axisX * box2.halfSize[0]) * plane)) +
+			abs(compAdd((box2.axisY * box2.halfSize[1]) * plane)) +
+			abs(compAdd((box2.axisZ * box2.halfSize[2]) * plane)))));
 }
 
 static bool CollisionCheck(const OBB& box1, const OBB& box2) {
