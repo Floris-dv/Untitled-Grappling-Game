@@ -33,7 +33,7 @@ Material::Material(const Material& other) : m_Shader(other.m_Shader), m_UseTextu
 
 Material::Material(Material&& other) noexcept
 {
-#define SWAP(a) std::swap(##a, other.##a)
+#define SWAP(a) std::swap(a, other.a)
 	SWAP(m_Shader);
 	SWAP(m_UseTextures);
 	SWAP(m_OpenGLPrepared);

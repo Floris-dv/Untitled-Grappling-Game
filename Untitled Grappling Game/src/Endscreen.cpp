@@ -8,12 +8,12 @@ void Endscreen::Render()
 		return;
 
 	if (ImGui::BeginPopupModal(m_EndscreenText.c_str())) {
-		ImGui::Text(m_EndscreenText.c_str());
+		ImGui::Text("%s", m_EndscreenText.c_str());
 
 		if (m_LevelCompletionTime.hours().count())
-			ImGui::Text("Time: %d:%02d:%02d:%03d", m_LevelCompletionTime.hours(), m_LevelCompletionTime.minutes(), m_LevelCompletionTime.seconds(), m_LevelCompletionTime.subseconds());
+			ImGui::Text("Time: %d:%02d:%02lld:%03lld", m_LevelCompletionTime.hours().count(), m_LevelCompletionTime.minutes().count(), m_LevelCompletionTime.seconds().count(), m_LevelCompletionTime.subseconds().count());
 		else
-			ImGui::Text("Time: %02d:%02d:%03d", m_LevelCompletionTime.minutes(), m_LevelCompletionTime.seconds(), m_LevelCompletionTime.subseconds());
+			ImGui::Text("Time: %02d:%02lld:%03lld", m_LevelCompletionTime.minutes().count(), m_LevelCompletionTime.seconds().count(), m_LevelCompletionTime.subseconds().count());
 
 		if (ImGui::Button("Restart")) {
 			m_State = State::Restart;

@@ -23,12 +23,6 @@ void GrapplingCamera::UpdatePosition(float deltaTime)
 
 	Position += Vel * deltaTime * 60.0f;
 
-	if (PhysicsPosition.y < -50.0f) {
-		Position = glm::vec3();
-		Vel = glm::vec3();
-		Front = glm::vec3(1.0f, 0.0f, 0.0f);
-	}
-
 	PhysicsPosition = { Position.x, Position.y - PHYSICSOFFSET, Position.z };
 }
 

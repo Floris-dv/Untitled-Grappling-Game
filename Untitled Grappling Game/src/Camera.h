@@ -52,6 +52,8 @@ protected:
 	// constructor with vectors
 	Camera(Camera_Type cameraType, CameraOptions options, float aspectRatio, glm::vec3 position, glm::vec3 up, float yaw, float pitch);
 
+	virtual ~Camera() = default;
+
 	const glm::vec3 m_WorldUp;
 	glm::vec3 m_Up;		// READ-ONLY
 	glm::vec3 m_Right;	// READ-ONLY

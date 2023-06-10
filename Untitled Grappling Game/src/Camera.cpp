@@ -114,6 +114,8 @@ void Camera::Reset() {
 	Vel = glm::vec3();
 	Position = glm::vec3();
 	Front = glm::vec3(1.0f, 0.0f, 0.0f);
+	m_Yaw = 0.0f;
+	m_Pitch = 0.0f;
 }
 
 const Frustum& Camera::GetFrustum()

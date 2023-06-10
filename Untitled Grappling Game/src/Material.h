@@ -6,14 +6,12 @@ class Material
 {
 	std::shared_ptr<Shader> m_Shader = nullptr;
 	union {
-		struct {
-			std::vector<Texture> m_Textures;
-			std::vector<std::shared_future<LoadingTexture*>> m_LoadingTextures;
-		};
-		struct {
-			glm::vec3 m_Diffuse;
-			glm::vec3 m_Specular;
-		};
+		std::vector<Texture> m_Textures;
+		glm::vec3 m_Diffuse;
+	};
+	union {
+		std::vector<std::shared_future<LoadingTexture*>> m_LoadingTextures;
+		glm::vec3 m_Specular;
 	};
 
 	bool m_UseTextures = false;

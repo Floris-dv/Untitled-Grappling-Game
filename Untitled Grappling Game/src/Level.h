@@ -73,7 +73,7 @@ private:
 	static constexpr uint32_t VERSION_NR = VERSION(0, 0, 1);
 
 	// Uses m_Matrices to setup m_InstanceVBO and Block::Object
-	void SetupÍnstanceVBO();
+	void SetupInstanceVBO();
 
 	// Uses m_Blocks to setup m_Matrices
 	void SetupMatrices();

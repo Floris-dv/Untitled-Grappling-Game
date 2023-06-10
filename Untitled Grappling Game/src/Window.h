@@ -3,114 +3,6 @@
 struct GLFWwindow;
 class Window;
 
-enum Key;
-enum class Action {
-	RELEASE = 0,
-	PRESS = 1,
-	REPEAT = 2
-};
-
-struct WindowFunctions {
-	std::function<void(unsigned int c)> CharFn = [](...) {};
-	std::function<void(void)> CloseFn = [](...) {};
-	std::function<void(float x, float y)> CursorPosFn = [](...) {};
-	std::function<void(int button)> HeldMouseFn = [](...) {};
-	std::function<void(Key key, int scancode, Action action, int mods)> KeyPressFn = [](...) {};
-	std::function<void(int button)> PressMouseFn = [](...) {};
-	std::function<void(int button)> ReleaseMouseFn = [](...) {};
-	std::function<void(float xOffset, float yOffset)> ScrollFn = [](...) {};
-	std::function<void(uint32_t newWidth, uint32_t newHeight)> WindowResizeFn = [](...) {};
-};
-
-struct WindowProps
-{
-	std::string Title;
-	uint32_t Width;
-	uint32_t Height;
-	bool VSync;
-	WindowFunctions Functions{};
-	Window* WindowRef = nullptr;
-
-	WindowProps(const std::string& title = "TestWindow",
-		uint32_t width = 1600,
-		uint32_t height = 900,
-		bool vSync = true)
-		: Title(title), Width(width), Height(height), VSync(vSync)
-	{
-	}
-};
-
-// GLFW key mapping:
-enum Key;
-
-class Window
-{
-public:
-	// Poll IO events and swap buffers
-	void PollSwap();
-
-	uint32_t GetWidth() const { return m_Props.Width; }
-	uint32_t GetHeight() const { return m_Props.Height; }
-
-	float GetAspectRatio() const { return (float)GetWidth() / (float)GetHeight(); }
-
-	WindowFunctions& GetFunctions() { return m_Props.Functions; }
-
-	void SetKey(Key key, std::function<void(void)> function);
-
-	void SetVSync(bool vSync);
-	bool IsVSync() const { return m_Props.VSync; }
-
-	void Maximize();
-
-	void SetCursor(bool enabled);
-
-	float GetTime() const;
-
-	void ResetTime();
-
-	bool ShouldClose() const;
-
-	void SetShouldClose(bool shouldClose = true);
-
-	bool GetKeyPressed(Key key);
-
-	auto GetKeyMap(Key key) { return m_KeyMap.equal_range(key); }
-
-	GLFWwindow* GetGLFWWindow() { return m_Window; }
-
-	bool GetMouseButtonDown(int button);
-
-	// Destroyes GLFW and ImGui context
-	static void Destroy();
-
-	static void Initialize(const WindowProps& props) { if (!s_Window) s_Window = new Window(props); }
-
-	static Window& Get() { return *s_Window; }
-
-private:
-	explicit Window(const WindowProps& props) { Init(props); }
-
-	// Setups ImGui for this window, needs to happen after we installed callbacks:
-	// ImGui will take the input if necessary and pass it onto this
-	void SetupImGui();
-
-	// Also enables depth testing, gamma correction (if enabled), and debug output (if enabled),
-	// Also enables face culling and which faces are culled (Back, CCW)
-	static void SetupOpenGL();
-
-	// Version OpenGL is 4.6
-	static void SetupGLFW();
-
-	WindowProps m_Props;
-	GLFWwindow* m_Window = nullptr;
-
-	std::unordered_multimap<Key, std::function<void(void)>> m_KeyMap;
-
-	void Init(const WindowProps& props);
-	static Window* s_Window;
-};
-
 enum Key {
 	KEY_SPACE = 32,
 	KEY_APOSTROPHE = 39,  /* ' */
@@ -233,4 +125,111 @@ enum Key {
 	KEY_RIGHT_ALT = 346,
 	KEY_RIGHT_SUPER = 347,
 	KEY_MENU = 348,
+};
+
+enum class Action {
+	RELEASE = 0,
+	PRESS = 1,
+	REPEAT = 2
+};
+
+struct WindowFunctions {
+	std::function<void(unsigned int c)> CharFn = [](...) {};
+	std::function<void(void)> CloseFn = [](...) {};
+	std::function<void(float x, float y)> CursorPosFn = [](...) {};
+	std::function<void(int button)> HeldMouseFn = [](...) {};
+	std::function<void(Key key, int scancode, Action action, int mods)> KeyPressFn = [](...) {};
+	std::function<void(int button)> PressMouseFn = [](...) {};
+	std::function<void(int button)> ReleaseMouseFn = [](...) {};
+	std::function<void(float xOffset, float yOffset)> ScrollFn = [](...) {};
+	std::function<void(uint32_t newWidth, uint32_t newHeight)> WindowResizeFn = [](...) {};
+};
+
+struct WindowProps
+{
+	std::string Title;
+	uint32_t Width;
+	uint32_t Height;
+	bool VSync;
+	WindowFunctions Functions{};
+	Window* WindowRef = nullptr;
+
+	WindowProps(const std::string& title = "TestWindow",
+		uint32_t width = 1600,
+		uint32_t height = 900,
+		bool vSync = true)
+		: Title(title), Width(width), Height(height), VSync(vSync)
+	{
+	}
+};
+
+// GLFW key mapping:
+enum Key;
+
+class Window
+{
+public:
+	// Poll IO events and swap buffers
+	void PollSwap();
+
+	uint32_t GetWidth() const { return m_Props.Width; }
+	uint32_t GetHeight() const { return m_Props.Height; }
+
+	float GetAspectRatio() const { return (float)GetWidth() / (float)GetHeight(); }
+
+	WindowFunctions& GetFunctions() { return m_Props.Functions; }
+
+	void SetKey(Key key, std::function<void(void)> function);
+
+	void SetVSync(bool vSync);
+	bool IsVSync() const { return m_Props.VSync; }
+
+	void Maximize();
+
+	void SetCursor(bool enabled);
+
+	float GetTime() const;
+
+	void ResetTime();
+
+	bool ShouldClose() const;
+
+	void SetShouldClose(bool shouldClose = true);
+
+	bool GetKeyPressed(Key key);
+
+	auto GetKeyMap(Key key) { return m_KeyMap.equal_range(key); }
+
+	GLFWwindow* GetGLFWWindow() { return m_Window; }
+
+	bool GetMouseButtonDown(int button);
+
+	// Destroyes GLFW and ImGui context
+	static void Destroy();
+
+	static void Initialize(const WindowProps& props) { if (!s_Window) s_Window = new Window(props); }
+
+	static Window& Get() { return *s_Window; }
+
+private:
+	explicit Window(const WindowProps& props) { Init(props); }
+
+	// Setups ImGui for this window, needs to happen after we installed callbacks:
+	// ImGui will take the input if necessary and pass it onto this
+	void SetupImGui();
+
+	// Also enables depth testing, gamma correction (if enabled), and debug output (if enabled),
+	// Also enables face culling and which faces are culled (Back, CCW)
+	static void SetupOpenGL();
+
+	// Version OpenGL is 4.6
+	static void SetupGLFW();
+
+	WindowProps m_Props;
+	GLFWwindow* m_Window = nullptr;
+
+	std::unordered_multimap<Key, std::function<void(void)>> m_KeyMap;
+
+	void Init(const WindowProps& props);
+	static Window* s_Window;
 };

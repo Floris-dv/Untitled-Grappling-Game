@@ -33,7 +33,7 @@ Level::Level(const glm::vec3& startPlatformSize, const Block& finishBox, std::ve
 {
 	m_Blocks.insert(m_Blocks.begin(), { finishBox, { { -startPlatformSize.x * 0.5f, -startPlatformSize.y, -startPlatformSize.z * 0.5f}, {startPlatformSize.x * 0.5f, 0.0f, startPlatformSize.z * 0.5f} } });
 	SetupMatrices();
-	SetupÍnstanceVBO();
+	SetupInstanceVBO();
 }
 
 Level::Level(const std::string& levelFile, std::shared_ptr<Shader> instancedShader, std::shared_ptr<Shader> normalShader) : m_FileName(levelFile)
@@ -59,7 +59,7 @@ Level::Level(const std::string& levelFile, std::shared_ptr<Shader> instancedShad
 	m_FinishMaterial = std::make_unique<Material>(Material::Deserialize(file, normalShader));
 
 	SetupMatrices();
-	SetupÍnstanceVBO();
+	SetupInstanceVBO();
 }
 
 void Level::Write(std::string_view levelFile)
@@ -83,8 +83,8 @@ void Level::Render(Material* material, Material* finishMaterial) {
 
 void Level::RenderOneByOne()
 {
-	for (const auto& mat : std::ranges::views::take(m_Matrices, m_Matrices.size() - 1))
-		Block::Object.Draw(m_Material.get(), mat, true);
+	for (int i = 0; i < m_Matrices.size() - 1; i++)
+		Block::Object.Draw(m_Material.get(), m_Matrices[i], true);
 
 	Block::Object.Draw(m_FinishMaterial.get(), m_Matrices.back(), true);
 }
@@ -211,16 +211,22 @@ bool Level::UpdatePhysics(GrapplingCamera& camera)
 		m_StartTime = glfwGetTime();
 	}
 
+	if (camera.PhysicsPosition.y < -50.0f) {
+		camera.Reset();
+		m_StartTime = 0.0f;
+	}
+
+
 	OBB cameraBox{};
 	cameraBox.pos = camera.PhysicsPosition;
 	// camera box has no rotation
 	// TODO: add better constant factor for the camera block here
 	cameraBox.halfSize = glm::vec3{ 0.2f };
 
-	for (const Level::Block& block : std::views::drop(m_Blocks, 1)) {
-		if (CollisionCheck(cameraBox, OBB(block))) {
+	for (int i = 1; i < m_Blocks.size() - 1; i++) {
+		if (CollisionCheck(cameraBox, OBB(m_Blocks[i]))) {
 			ImGui::Text("Inside!!!");
-			BounceOn(block, camera);
+			BounceOn(m_Blocks[i], camera);
 		}
 	}
 
@@ -236,7 +242,7 @@ void Level::UpdateInstanceVBO() {
 	glNamedBufferData(m_InstanceVBO.ID(), (m_Matrices.size() - 1) * sizeof(m_Matrices[0]), &m_Matrices[1], GL_STATIC_DRAW);
 }
 
-void Level::SetupÍnstanceVBO()
+void Level::SetupInstanceVBO()
 {
 	Block::Object.VAO.Bind();
 
