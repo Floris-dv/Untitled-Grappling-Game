@@ -1,13 +1,3 @@
-[submodule "Untitled Grappling Game/vendor/spdlog"]
-	path = Untitled Grappling Game/vendor/spdlog
-	url = ../../gabime/spdlog.git
-[submodule "Untitled Grappling Game/vendor/imgui"]
-	path = Untitled Grappling Game/vendor/imgui
-	url = https://github.com/ocornut/imgui.git
-	branch = docking
-[submodule "Untitled Grappling Game/vendor/glm"]
-	path = Untitled Grappling Game/vendor/glm
-	url = https://github.com/g-truc/glm.git
 [submodule "Untitled Grappling Game/vendor/GLFW"]
 	path = Untitled Grappling Game/vendor/GLFW
 	url = https://github.com/glfw/glfw.git

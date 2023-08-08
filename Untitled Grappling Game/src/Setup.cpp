@@ -23,7 +23,6 @@
 
 #include <DebugBreak.h>
 
-
 #include "Timer.h"
 
 #include "Window.h"

@@ -24,7 +24,7 @@ void IndexBuffer::Bind() const {
 }
 
 void IndexBuffer::UnBind() const {
-#if _DEBUG
+#ifdef _DEBUG
 	if (s_IndexBufferBoundID != 0) {
 		s_IndexBufferBoundID = 0;
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -97,15 +97,14 @@ void VertexArray::AddBuffer(const VertexBuffer& VBO, const BufferLayout& layout,
 	unsigned int offset = 0;
 	for (int i = 0; i < layout.GetElements().size(); i++) {
 		LayoutElement e = layout.GetElements()[i];
-		int j = layout.GetStartIndex() + i;
+		GLuint j = layout.GetStartIndex() + i;
 		glEnableVertexArrayAttrib(m_ID, j);
 		glVertexArrayAttribBinding(m_ID, j, VBIndex);
-		int x = 0;
-		glVertexArrayAttribFormat(m_ID, j, e.Count, e.Type, e.Normalized ? GL_TRUE : GL_FALSE, offset);
+		glVertexArrayAttribFormat(m_ID, j, e.Count, e.Type, e.Normalized ? (GLboolean)GL_TRUE : (GLboolean)GL_FALSE, offset);
 
 		offset += e.GetSize();
 	}
-	glVertexArrayVertexBuffer(m_ID, VBIndex, VBO.ID(), 0, layout.GetStride());
+	glVertexArrayVertexBuffer(m_ID, VBIndex, VBO.ID(), 0, (GLsizei)layout.GetStride());
 
 	if (layout.GetInstanced())
 		glVertexArrayBindingDivisor(m_ID, VBIndex, 1);
@@ -119,7 +118,7 @@ void VertexArray::AddIndexBuffer(const IndexBuffer& IBO) {
 UniformBuffer::UniformBuffer(size_t size, const std::string& name, const void* data) : m_Name(name)
 {
 	glCreateBuffers(1, &m_ID);
-	glNamedBufferData(m_ID, size, data, GL_STATIC_DRAW);
+	glNamedBufferData(m_ID, (GLsizeiptr)size, data, GL_STATIC_DRAW);
 
 	Bind();
 	glBindBufferBase(GL_UNIFORM_BUFFER, s_MaxBlock, m_ID);
@@ -135,7 +134,7 @@ void UniformBuffer::SetBlock(Shader& shader)
 void UniformBuffer::SetData(size_t offset, size_t size, const void* data)
 {
 	Bind();
-	glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
+	glBufferSubData(GL_UNIFORM_BUFFER, (GLintptr)offset, (GLsizeiptr)size, data);
 }
 
 void UniformBuffer::Bind() const

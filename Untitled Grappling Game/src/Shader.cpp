@@ -198,6 +198,29 @@ Shader::Shader(std::string_view computePath)
 	}
 }
 
+Shader::Shader(uint32_t* compute, size_t cSize)
+{
+
+	const GLuint ComputeShader = GetShader(compute, cSize, GL_COMPUTE_SHADER);
+
+	ID = glCreateProgram();
+	glAttachShader(ID, ComputeShader);
+
+	glLinkProgram(ID);
+
+
+	GLint succes;
+	glGetProgramiv(ID, GL_LINK_STATUS, &succes);
+
+	if (!succes) {
+		char infolog[512];
+		const GLenum error = glGetError();
+
+		glGetProgramInfoLog(ID, 512, NULL, &infolog[0]);
+		NG_ERROR("Compute Shader {} (with shader {}) linking failed: {}. Error raised is {}", ID, ComputeShader, &infolog[0], error);
+	}
+}
+
 // use/activate the shader
 void Shader::Use() noexcept {
 	if (s_ShaderInUse != ID) {

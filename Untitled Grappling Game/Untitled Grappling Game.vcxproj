@@ -30,6 +30,7 @@
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -57,7 +58,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level2</WarningLevel>
+      <WarningLevel>EnableAllWarnings</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
@@ -79,7 +80,7 @@
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
-      <AdditionalLibraryDirectories>../Dependencies/lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Untitled Grappling Game\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -92,11 +93,19 @@
       <AdditionalIncludeDirectories>vendor\spdlog\include;vendor\assimp\include;vendor\GLFW\include;vendor\imgui;vendor\glm;src;vendor</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
-      <DisableSpecificWarnings>26812</DisableSpecificWarnings>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <DisableSpecificWarnings>26812; 4514</DisableSpecificWarnings>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <SupportJustMyCode>true</SupportJustMyCode>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>
+      </MinimalRebuild>
+      <EnableEnhancedInstructionSet />
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <IntelJCCErratum />
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -107,10 +116,11 @@
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
-      <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Untitled Grappling Game\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Game.cpp" />
     <ClCompile Include="src\Endscreen.cpp" />
     <ClCompile Include="src\GrapplingCamera.cpp" />
     <ClCompile Include="src\EditingCamera.cpp" />
@@ -136,52 +146,82 @@
     <ClCompile Include="vendor\Vendor.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\Shaders\Crosshair.frag" />
-    <None Include="src\Shaders\Crosshair.vert" />
-    <None Include="src\Shaders\LightInstanced.vert" />
+    <CustomBuild Include="src\Shaders\Crosshair.frag">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
+      <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ClInclude</OutputItemType>
+      <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
+      <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ClInclude</OutputItemType>
+      <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BuildInParallel>
+    </CustomBuild>
+    <CustomBuild Include="src\Shaders\Crosshair.vert">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
+      <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ClInclude</OutputItemType>
+      <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
+      <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ClInclude</OutputItemType>
+      <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BuildInParallel>
+    </CustomBuild>
+    <CustomBuild Include="src\Shaders\LightInstanced.vert">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
+      <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ClInclude</OutputItemType>
+      <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
+      <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ClInclude</OutputItemType>
+      <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BuildInParallel>
+    </CustomBuild>
     <None Include="src\Maybe Later\Shadows\ShadowCalculation.frag" />
     <CustomBuild Include="src\Shaders\Bloom.comp">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BuildInParallel>
     </CustomBuild>
     <CustomBuild Include="src\Shaders\Bloompass.frag">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BuildInParallel>
     </CustomBuild>
     <CustomBuild Include="src\Shaders\Blur.frag">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BuildInParallel>
     </CustomBuild>
@@ -197,31 +237,27 @@
     <None Include="src\Maybe Later\Shadows\PointLightShadow.geom" />
     <CustomBuild Include="src\Shaders\Instanced.vert">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BuildInParallel>
     </CustomBuild>
     <CustomBuild Include="src\Shaders\MainFrag.frag">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BuildInParallel>
     </CustomBuild>
@@ -229,142 +265,126 @@
     <None Include="src\Maybe Later\Shadows\Shadow.vert" />
     <CustomBuild Include="src\Shaders\PostProcessing.frag">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BuildInParallel>
     </CustomBuild>
     <CustomBuild Include="src\Shaders\FrameBuffer.vert">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BuildInParallel>
     </CustomBuild>
     <CustomBuild Include="src\Shaders\LightFrag.frag">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BuildInParallel>
     </CustomBuild>
     <CustomBuild Include="src\Shaders\LightVert.vert">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BuildInParallel>
     </CustomBuild>
     <CustomBuild Include="src\Shaders\SkyboxFrag.frag">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BuildInParallel>
     </CustomBuild>
     <CustomBuild Include="src\Shaders\SkyboxVert.vert">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BuildInParallel>
     </CustomBuild>
     <CustomBuild Include="src\Shaders\NoInstance.vert">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BuildInParallel>
     </CustomBuild>
     <None Include="src\Maybe Later\Deferred Shading\SkyboxGBuffer.frag" />
     <CustomBuild Include="src\Shaders\TextureFrag.frag">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BuildInParallel>
     </CustomBuild>
     <CustomBuild Include="src\Shaders\TextureVert.vert">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)/Bin/glslangValidator.exe -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)%(Filename).h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(VULKAN_SDK)/Bin/glslangValidator.exe" --quiet -G -o "$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h" --vn %(Filename)Code "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)Untitled Grappling Game/src/Shaders/%(Filename).h</Outputs>
       <OutputItemType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ClInclude</OutputItemType>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BuildInParallel>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\LevelTimer.h" />
+    <ClInclude Include="src\Game.h" />
     <ClInclude Include="src\Endscreen.h" />
     <ClInclude Include="src\GrapplingCamera.h" />
     <ClInclude Include="src\EditingCamera.h" />
@@ -380,7 +400,10 @@
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\Renderer.h" />
     <ClInclude Include="src\SaveFile.h" />
+    <ClInclude Include="src\Shaders\Bloom.h" />
+    <ClInclude Include="src\Shaders\MainFrag.h" />
     <ClInclude Include="src\Transform.h" />
+    <ClInclude Include="src\utils.h" />
     <ClInclude Include="src\Vertex.h" />
     <ClInclude Include="src\VertexData.h" />
     <ClInclude Include="src\Texture.h" />

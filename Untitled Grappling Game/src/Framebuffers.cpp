@@ -26,7 +26,7 @@ namespace Framebuffers {
 		}
 	}
 
-	void Draw(float exposure, GLuint texture, GLuint bloomTexture) {
+	void Draw([[maybe_unused]] float exposure, GLuint texture, GLuint bloomTexture) {
 		Profiler p("Final postprocessing");
 
 		glDisable(GL_DEPTH_TEST);
@@ -62,7 +62,7 @@ namespace Framebuffers {
 			glCreateTextures(GL_TEXTURE_2D, 1, &mainTex);
 
 			// HDR texture
-			glTextureStorage2D(mainTex, 1, GL_RGBA16F, Window::Get().GetWidth(), Window::Get().GetHeight());
+			glTextureStorage2D(mainTex, 1, GL_RGBA16F, (GLsizei)Window::Get().GetWidth(), (GLsizei)Window::Get().GetHeight());
 
 			glTextureParameteri(mainTex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTextureParameteri(mainTex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -72,7 +72,7 @@ namespace Framebuffers {
 		}
 
 		// Render buffer:
-		glNamedRenderbufferStorage(mainRB, GL_DEPTH24_STENCIL8, Window::Get().GetWidth(), Window::Get().GetHeight());
+		glNamedRenderbufferStorage(mainRB, GL_DEPTH24_STENCIL8, (GLsizei)Window::Get().GetWidth(), (GLsizei)Window::Get().GetHeight());
 		glNamedFramebufferRenderbuffer(main, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, mainRB); // If I don't do this I get an error
 
 		auto status = glCheckNamedFramebufferStatus(mainRB, GL_FRAMEBUFFER);
@@ -154,7 +154,7 @@ namespace Framebuffers {
 // if the user changes the window size, this function is called
 void Framebuffers::size_callback(uint32_t width, uint32_t height) noexcept {
 	// make sure the viewport matches the new Window::Get() dimensions
-	glViewport(0, 0, width, height);
+	glViewport(0, 0, (GLsizei)width, (GLsizei)height);
 
 	Camera::Get()->AspectRatio = (float)width / (float)height;
 

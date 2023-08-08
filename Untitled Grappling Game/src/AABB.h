@@ -36,6 +36,8 @@ struct Frustum
 
 struct BoundingVolume
 {
+	virtual ~BoundingVolume() {}
+
 	virtual bool isOnFrustum(const Frustum& camFrustum, const Transform& transform) const = 0;
 
 	virtual bool isOnOrForwardPlane(const Plane& plan) const = 0;
@@ -63,6 +65,8 @@ struct AABB : public BoundingVolume
 	AABB(const AABB& aabb) = default;
 
 	AABB() = default;
+
+	virtual ~AABB() {}
 
 	std::array<glm::vec3, 8> getVertices() const;
 	//see https://gdbooks.gitbooks.io/3dcollisions/content/Chapter2/static_aabb_plan.html

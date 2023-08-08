@@ -21,6 +21,11 @@ public:
 
 	Shader(std::string_view computePath);
 
+	template<size_t cSize>
+	Shader(const uint32_t compute[cSize]) : Shader(compute, cSize) {}
+
+	Shader(uint32_t* compute, size_t cSize);
+
 	~Shader() {
 		glDeleteProgram(ID);
 	}
@@ -73,7 +78,7 @@ public:
 	void SetMat4(std::string_view name, const glm::mat4& value) {
 		glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, glm::value_ptr(value));
 	}
-	void SetBlock(std::string_view name, int binding_point) {
+	void SetBlock(std::string_view name, GLuint binding_point) {
 		GLuint blockID = glGetUniformBlockIndex(ID, name.data());
 		glUniformBlockBinding(ID, blockID, binding_point);
 	}

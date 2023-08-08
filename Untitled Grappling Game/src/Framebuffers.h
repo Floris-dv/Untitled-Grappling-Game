@@ -28,7 +28,7 @@ namespace Framebuffers {
 	void Delete();
 
 	// Draw the contents of the currently bound framebuffer to the screen
-	void Draw(float exposure, GLuint texture = mainTex, GLuint bloomTexture = 0);
+	void Draw([[maybe_unused]] float exposure, GLuint texture = mainTex, GLuint bloomTexture = 0);
 
 	void Bind(GLuint FBO);
 

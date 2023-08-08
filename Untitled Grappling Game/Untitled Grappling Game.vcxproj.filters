@@ -78,6 +78,9 @@
     <ClCompile Include="src\Endscreen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\Maybe Later\Deferred Shading\GBuffer.frag" />
@@ -94,9 +97,6 @@
     <None Include="src\Maybe Later\Shadows\Shadow.vert" />
     <None Include="src\Maybe Later\Deferred Shading\SkyboxGBuffer.frag" />
     <None Include="src\Maybe Later\Shadows\ShadowCalculation.frag" />
-    <None Include="src\Shaders\LightInstanced.vert" />
-    <None Include="src\Shaders\Crosshair.frag" />
-    <None Include="src\Shaders\Crosshair.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Vendor\imgui\imconfig.h">
@@ -201,6 +201,21 @@
     <ClInclude Include="src\Levels.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Shaders\Bloom.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Shaders\MainFrag.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\LevelTimer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\Shaders\Instanced.vert" />
@@ -217,5 +232,8 @@
     <CustomBuild Include="src\Shaders\SkyboxVert.vert" />
     <CustomBuild Include="src\Shaders\TextureFrag.frag" />
     <CustomBuild Include="src\Shaders\TextureVert.vert" />
+    <CustomBuild Include="src\Shaders\Crosshair.frag" />
+    <CustomBuild Include="src\Shaders\Crosshair.vert" />
+    <CustomBuild Include="src\Shaders\LightInstanced.vert" />
   </ItemGroup>
 </Project>
