@@ -4,10 +4,10 @@
 #include "Level.h"
 #include "Log.h"
 #include "SaveFile.h"
+#include "UtilityMacros.h"
 #include "VertexData.h"
 #include "Window.h"
 #include "imgui/imgui.h"
-#include "utils.h"
 #include <glm/gtx/norm.hpp>
 #include <imguizmo/ImGuizmo.h>
 
@@ -30,13 +30,9 @@ inline IStream &operator>>(IStream &input, Level::Block &output) {
 }
 
 Level::Level(const glm::vec3 &startPlatformSize, const Block &finishBox,
-             std::vector<Block> &&blocks,
-             std::unique_ptr<Material> &&instancedMaterial,
-             std::unique_ptr<Material> &&normalMaterial,
-             std::unique_ptr<Material> &&finishMaterial)
-    : m_Blocks(std::move(blocks)),
-      m_InstancedMaterial(std::move(instancedMaterial)),
-      m_Material(std::move(normalMaterial)),
+             std::vector<Block> &&blocks, EmptyMaterial &&normalMaterial,
+             EmptyMaterial &&finishMaterial)
+    : m_Blocks(std::move(blocks)), m_MainMaterial(std::move(normalMaterial)),
       m_FinishMaterial(std::move(finishMaterial)), m_AllowEditing(true) {
   m_Blocks.insert(
       m_Blocks.begin(),
@@ -48,11 +44,8 @@ Level::Level(const glm::vec3 &startPlatformSize, const Block &finishBox,
   SetupInstanceVBO();
 }
 
-Level::Level(const std::string &levelFile,
-             std::shared_ptr<Shader> instancedShader,
-             std::shared_ptr<Shader> normalShader)
-    : m_FileName(levelFile) {
-  std::ifstream file(levelFile, std::ios::binary);
+Level::Level(const std::string &levelFile) : m_FileName(levelFile) {
+  std::ifstream file(levelFile, std::ios::in | std::ios::binary);
 
   if (!file)
     NG_ERROR("File {} doesn't exist", levelFile);
@@ -64,36 +57,20 @@ Level::Level(const std::string &levelFile,
 
   file >> m_Blocks;
 
-  std::stringstream materialData = Material::GetDataFromFile(file);
-  std::stringstream copy;
-  copy << materialData.str();
-
-  m_InstancedMaterial =
-      std::make_unique<Material>(Material::Deserialize(copy, instancedShader));
-  m_Material = std::make_unique<Material>(
-      Material::Deserialize(materialData, normalShader));
-  m_FinishMaterial =
-      std::make_unique<Material>(Material::Deserialize(file, normalShader));
+  m_MainMaterial = EmptyMaterial(file);
+  m_FinishMaterial = EmptyMaterial(file);
 
   SetupMatrices();
   SetupInstanceVBO();
 }
-
-Level::Level(Level &&other)
-    : MOVE_CONSTRUCT(m_AllowEditing), MOVE_CONSTRUCT(m_Blocks),
-      MOVE_CONSTRUCT(m_FileName), MOVE_CONSTRUCT(m_FinishMaterial),
-      MOVE_CONSTRUCT(m_InstancedMaterial), MOVE_CONSTRUCT(m_InstanceVBO),
-      MOVE_CONSTRUCT(m_Material), MOVE_CONSTRUCT(m_Matrices),
-      MOVE_CONSTRUCT(m_StartTime) {}
 
 void Level::swap(Level &other) {
   SWAP(m_AllowEditing);
   SWAP(m_Blocks);
   SWAP(m_FileName);
   SWAP(m_FinishMaterial);
-  SWAP(m_InstancedMaterial);
   SWAP(m_InstanceVBO);
-  SWAP(m_Material);
+  SWAP(m_MainMaterial);
   SWAP(m_Matrices);
   SWAP(m_StartTime);
 }
@@ -107,25 +84,34 @@ void Level::Write(std::string_view levelFile) {
 
   file << m_Blocks;
 
-  m_Material->Serialize(file);
-  m_FinishMaterial->Serialize(file);
+  m_MainMaterial.Serialize(file);
+  m_FinishMaterial.Serialize(file);
 }
 
 void Level::Render(Material *material, Material *finishMaterial) {
   Block::Object.DrawInstanced(material, true,
-                              m_Matrices.size() -
+                              (unsigned int)m_Matrices.size() -
                                   1); // finish box needs to be another color
-  Block::Object.Draw(finishMaterial, m_Matrices.front(), true);
+  Block::Object.Draw(m_Matrices.front(), finishMaterial, true);
 }
 
-void Level::RenderOneByOne() {
-  for (int i = 0; i < m_Matrices.size() - 1; i++)
-    Block::Object.Draw(m_Material.get(), m_Matrices[i], true);
+void Level::Render(Shader *shader, Shader *finishShader) {
+  m_FinishMaterial.Load(*finishShader);
 
-  Block::Object.Draw(m_FinishMaterial.get(), m_Matrices.back(), true);
+  Block::Object.DrawInstanced(&m_MainMaterial, shader,
+                              (unsigned int)m_Matrices.size() - 1);
+
+  Block::Object.Draw(m_Matrices.front(), &m_FinishMaterial, finishShader);
 }
 
-void Level::RenderEditingMode(size_t &index) {
+void Level::RenderOneByOne(Shader *shader, Shader *finishShader) {
+  for (size_t i = 0; i < m_Matrices.size() - 1; i++)
+    Block::Object.Draw(m_Matrices[i], &m_MainMaterial, shader);
+
+  Block::Object.Draw(m_Matrices.back(), &m_FinishMaterial, finishShader);
+}
+
+void Level::RenderEditingMode(size_t &index, Camera *camera) {
   if (!m_AllowEditing)
     return;
 
@@ -219,8 +205,8 @@ void Level::RenderEditingMode(size_t &index) {
   }
   ImGuiIO &io = ImGui::GetIO();
   ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-  ImGuizmo::Manipulate(glm::value_ptr(Camera::Get()->GetViewMatrix()),
-                       glm::value_ptr(Camera::Get()->GetProjMatrix()),
+  ImGuizmo::Manipulate(glm::value_ptr(camera->GetViewMatrix()),
+                       glm::value_ptr(camera->GetProjMatrix()),
                        s_CurrentGizmoOperation, s_CurrentGizmoMode, matrix,
                        nullptr, useSnap ? &snap.x : nullptr);
 
@@ -297,7 +283,8 @@ void Level::SetupInstanceVBO() {
   Block::Object.VAO.Bind();
 
   std::shared_ptr<Material> s(nullptr);
-  m_InstanceVBO = VertexBuffer((m_Matrices.size() - 1) * sizeof(m_Matrices[0]),
+  m_InstanceVBO = VertexBuffer(((unsigned int)m_Matrices.size() - 1) *
+                                   sizeof(m_Matrices[0]),
                                &m_Matrices[1]);
 
   if (!Block::Object.IsValid())

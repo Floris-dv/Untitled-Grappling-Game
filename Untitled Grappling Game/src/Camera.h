@@ -29,8 +29,6 @@ public:
   enum Camera_Type { CAMERA_TYPE_GRAPPLING = 1, CAMERA_TYPE_EDITING = 2 };
 
 private:
-  inline static Camera *s_Camera;
-
   glm::mat4 m_ProjMatrix{1.0f};
   glm::mat4 m_ViewMatrix{1.0f};
   glm::mat4 m_VPMatrix{1.0f};
@@ -54,7 +52,11 @@ public:
   // constructor with vectors
   Camera(Camera_Type cameraType, CameraOptions options, float aspectRatio,
          glm::vec3 position, glm::vec3 up, float yaw, float pitch);
-  virtual ~Camera() = default;
+  virtual ~Camera() {}
+
+  Camera(const Camera &other) = default;
+  Camera &operator=(const Camera &other) = default;
+  Camera &operator=(Camera &&other) = default;
 
   // camera Attributes
   glm::vec3 Position;
@@ -65,17 +67,7 @@ public:
 
   float AspectRatio;
 
-  template <typename T, typename... Elems>
-  static void SetCamera(Elems... elements) {
-    if (s_Camera)
-      delete s_Camera;
-    s_Camera = new T(elements...);
-  }
-
-  static Camera *Get() {
-    // __debugbreak();
-    return s_Camera;
-  }
+  glm::vec2 *GetEulerAngles() { return (glm::vec2 *)&m_Yaw; }
 
   // returns the view matrix calculated using Euler Angles and the LookAt Matrix
   const glm::mat4 &GetViewMatrix();
@@ -104,8 +96,6 @@ public:
   void UpdateCameraVectors(float deltaTime);
 
   virtual void Reset();
-
-  Camera(const Camera &c) = delete;
 
 protected:
   // Gets called by UpdateCameraVectors

@@ -7,6 +7,8 @@ Camera::Camera(Camera_Type cameraType, CameraOptions options, float aspectRatio,
       Position(Position), Front(glm::vec3(0.0f, 0.0f, -1.0f)),
       Vel(glm::vec3(0.0f)), CameraType(cameraType), AspectRatio(aspectRatio) {
   m_Right = glm::normalize(glm::cross(Front, m_WorldUp));
+
+  Reset();
 }
 
 void Camera::GenerateEverything() {

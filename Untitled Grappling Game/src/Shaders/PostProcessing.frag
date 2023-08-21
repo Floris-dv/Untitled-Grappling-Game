@@ -1,8 +1,8 @@
 #version 460 core
 
-#define USE_HDR 0
+#define USE_HDR 1
 #define ENABLE_BLOOM 1
-#define CORRECT_GAMMA 1
+#define CORRECT_GAMMA 0
 
 layout (location = 0) out vec4 fragColor;
 
@@ -38,5 +38,5 @@ void main()
     col = clamp((col * (a * col + b)) / (col * (c * col + d) + e), 0.0, 1.0);
 #endif
 #endif
-    fragColor.rgb = col;
+    fragColor = vec4(col, 1.0);
 }

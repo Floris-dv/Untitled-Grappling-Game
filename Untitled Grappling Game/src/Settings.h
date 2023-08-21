@@ -5,7 +5,9 @@
 #define USE_DEBUG_MESSAGE_CALLBACK 1
 
 #define ENABLE_HDR 1 // only works when ENABLE_POSTPROCESSING is 1
-#define ENABLE_BLOOM 1 // ENABLE_HDR is adviced when turning this option on, only works when ENABLE_POSTPROCESSING is 1
+#define ENABLE_BLOOM                                                           \
+  1 // ENABLE_HDR is adviced when turning this option on, only works when
+    // ENABLE_POSTPROCESSING is 1
 
 // enables gamma correction
 #define CORRECT_GAMMA 0
@@ -20,14 +22,14 @@
 #define DIST 0
 
 /* TODO:
-* Make submeshes use a texture atlas
-* Use a renderer (at least to not redundantly set textures the whole time)
-* Make textures in models a unique pointer
-* When #embed is here: use that instead of header files
-*/
+ * Make submeshes use a texture atlas
+ * Use a renderer (at least to not redundantly set textures the whole time)
+ * Make textures in models a unique pointer
+ * When #embed is here: use that instead of header files
+ */
 /*
-* DONE (for showing in HPG)
-* MultiMesh
-* Frustum Culling
-* Window Class
-*/
+ * DONE (for showing in HPG)
+ * MultiMesh
+ * Frustum Culling
+ * Window Class
+ */

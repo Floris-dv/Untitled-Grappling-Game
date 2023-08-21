@@ -1,7 +1,7 @@
 #pragma once
 #include "Shader.h"
 
-#include "utils.h"
+#include "UtilityMacros.h"
 
 class VertexBuffer {
 private:
@@ -14,6 +14,8 @@ public:
     if (m_ID)
       glDeleteBuffers(1, &m_ID);
   }
+
+  DELETE_COPY_CONSTRUCTOR(VertexBuffer)
 
   VertexBuffer(VertexBuffer &&buffer) noexcept : m_ID(buffer.m_ID) {
     buffer.m_ID = 0;
@@ -43,7 +45,11 @@ public:
 
   IndexBuffer(size_t size, const void *data);
 
-  IndexBuffer(IndexBuffer &&buffer) : m_ID(buffer.m_ID) { buffer.m_ID = 0; }
+  IndexBuffer(IndexBuffer &&buffer) noexcept : m_ID(buffer.m_ID) {
+    buffer.m_ID = 0;
+  }
+
+  DELETE_COPY_CONSTRUCTOR(IndexBuffer)
 
   ~IndexBuffer() {
     if (m_ID)
@@ -74,9 +80,12 @@ private:
   std::string m_Name;
 
 public:
+  UniformBuffer() : m_ID(0), m_BlockID(0) {}
   UniformBuffer(size_t size, const std::string &name,
                 const void *data = nullptr);
   ~UniformBuffer() { glDeleteBuffers(1, &m_ID); }
+
+  DELETE_COPY_CONSTRUCTOR(UniformBuffer)
 
   void swap(UniformBuffer &other) noexcept {
     SWAP(m_ID);
@@ -97,12 +106,12 @@ public:
 OVERLOAD_STD_SWAP(UniformBuffer)
 
 struct LayoutElement {
-  unsigned int Type;
+  GLenum Type;
   unsigned int Count;
 
   bool Normalized = true;
 
-  constexpr unsigned int GetSize() const {
+  constexpr GLint GetSize() const {
     switch (Type) {
     case GL_FLOAT:
       return sizeof(GLfloat) * Count;
@@ -121,9 +130,9 @@ private:
   unsigned int m_StartIndex;
 
   unsigned int m_Stride = 0;
-  std::vector<LayoutElement> m_Elements;
-
   bool m_IsInstanced;
+
+  std::vector<LayoutElement> m_Elements;
 
   // to work with g++: otherwise an error is raised: explicit specialization in
   // non namespace
@@ -168,8 +177,8 @@ public:
 
   constexpr BufferLayout(std::vector<LayoutElement> &&elements,
                          unsigned int startIndex = 0, bool instanced = false)
-      : m_StartIndex(startIndex), m_Stride(0), m_IsInstanced(instanced) {
-    m_Elements = std::move(elements);
+      : m_StartIndex(startIndex), m_Stride(0), m_IsInstanced(instanced),
+        m_Elements(std::move(elements)) {
     for (const auto &le : m_Elements)
       m_Stride += le.GetSize();
   }
@@ -177,8 +186,8 @@ public:
   constexpr BufferLayout(unsigned int startIndex, unsigned int stride,
                          const std::vector<LayoutElement> &elements,
                          bool instanced)
-      : m_StartIndex(startIndex), m_Stride(stride), m_Elements(elements),
-        m_IsInstanced(instanced) {}
+      : m_StartIndex(startIndex), m_Stride(stride), m_IsInstanced(instanced),
+        m_Elements(elements) {}
 
   constexpr BufferLayout(unsigned int StartIndex = 0, bool instanced = false)
       : m_StartIndex(StartIndex), m_IsInstanced(instanced) {}
@@ -216,6 +225,8 @@ public:
   }
 
   OVERLOAD_OPERATOR_RVALUE(VertexArray)
+
+  DELETE_COPY_CONSTRUCTOR(VertexArray)
 
   void Bind() const;
   void UnBind() const;

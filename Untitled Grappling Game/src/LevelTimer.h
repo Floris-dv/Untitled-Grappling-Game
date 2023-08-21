@@ -3,7 +3,7 @@
 extern "C" double glfwGetTime(void);
 
 class LevelTimer {
-  double m_Time; // If positive: starttime, if negative: duration
+  double m_Time = 0.0; // If positive: starttime, if negative: duration
 
 public:
   void Start() { m_Time = glfwGetTime(); }

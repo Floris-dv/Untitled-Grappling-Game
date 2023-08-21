@@ -23,8 +23,6 @@ static void APIENTRY debug_message_callback(GLenum source, GLenum type,
                                             const GLchar *message,
                                             const void *userParam);
 
-Window *Window::s_Window;
-
 void Window::Init(const WindowProps &props) {
   PROFILE_FUNCTION_ONCE();
   NG_INFO("Creating window {0} ({1}, {2})", props.Title, props.Width,
@@ -232,12 +230,11 @@ void Window::SetupGLFW() {
   glfwWindowHint(GLFW_DEPTH_BITS, 32);
 }
 
-void Window::Destroy() {
+Window::~Window() {
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();
   glfwTerminate();
-  s_Window = nullptr;
 }
 
 void Window::SetupImGui() {

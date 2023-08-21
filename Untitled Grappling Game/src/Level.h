@@ -3,7 +3,7 @@
 #include "GrapplingCamera.h"
 #include "Material.h"
 #include "Object.h"
-#include "utils.h"
+#include "UtilityMacros.h"
 
 /* TODO
  * Structure that I want:
@@ -27,33 +27,34 @@ public:
   };
 
 public:
+  Level() : m_AllowEditing(true) {}
+
   Level(const glm::vec3 &startPlatformSize, const Block &finishBox,
-        std::vector<Block> &&blocks,
-        std::unique_ptr<Material> &&instancedMaterial,
-        std::unique_ptr<Material> &&normalMaterial,
-        std::unique_ptr<Material> &&finishMaterial);
+        std::vector<Block> &&blocks, EmptyMaterial &&normalMaterial,
+        EmptyMaterial &&finishMaterial);
 
-  Level(const std::string &levelFile, std::shared_ptr<Shader> instancedShader,
-        std::shared_ptr<Shader> normalShader);
+  Level(const std::string &levelFile);
 
-  Level(Level &&level);
+  Level(Level &&level) noexcept { swap(level); }
 
   void swap(Level &other);
 
   OVERLOAD_OPERATOR_RVALUE(Level)
 
+  DELETE_COPY_CONSTRUCTOR(Level)
+
   void Write(std::string_view levelFile);
 
   // Assumes the MVP-matrix has been set
-  void Render() { Render(m_InstancedMaterial.get(), m_FinishMaterial.get()); }
-
   void Render(Material *material, Material *finishMaterial);
+
+  void Render(Shader *shader, Shader *finishShader);
 
   // Doesn't use instanced rendering, instead uses normal rendering, used for
   // editing mode
-  void RenderOneByOne();
+  void RenderOneByOne(Shader *shader, Shader *finishShader);
 
-  void RenderEditingMode(size_t &index);
+  void RenderEditingMode(size_t &index, Camera *camera);
 
   const std::vector<Block> &GetBlocks() { return m_Blocks; }
 
@@ -70,9 +71,8 @@ private:
   std::vector<Block> m_Blocks;
   std::vector<glm::mat4> m_Matrices;
 
-  std::unique_ptr<Material> m_InstancedMaterial;
-  std::unique_ptr<Material> m_Material;
-  std::unique_ptr<Material> m_FinishMaterial;
+  EmptyMaterial m_MainMaterial;
+  EmptyMaterial m_FinishMaterial;
 
   VertexBuffer m_InstanceVBO;
 

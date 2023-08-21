@@ -23,6 +23,12 @@ public:
                   float aspectRatio, glm::vec3 position, glm::vec3 up,
                   float yaw, float pitch);
 
+  GrapplingCamera(GrapplingCamera &&other) = default;
+  GrapplingCamera(const GrapplingCamera &other) = default;
+
+  GrapplingCamera &operator=(GrapplingCamera &&other) = default;
+  GrapplingCamera &operator=(const GrapplingCamera &other) = default;
+
   bool m_CanJump = true;
 
 #define PHYSICSOFFSET 0.5f

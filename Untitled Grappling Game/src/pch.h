@@ -3,8 +3,8 @@
 #define NOMINMAX
 
 // Files/streams
-#include <fstream>
 #include <filesystem>
+#include <fstream>
 #include <sstream>
 // #include <iostream>
 // #include <format>
@@ -12,37 +12,39 @@
 #include <locale>
 
 // Containers:
-#include <string_view>
-#include <string>
+#include <array>
+#include <functional>
+#include <map>
 #include <optional>
 #include <span>
-// #include <set>
-#include <array>
-#include <vector>
+#include <string>
+#include <string_view>
 #include <unordered_map>
+#include <variant>
+#include <vector>
 // #include <any>
 // #include <bitset>
-#include <functional> // std::function
+// #include <set>
 
 // Multithreading
-#include <mutex>
-#include <future>
 #include <atomic>
 #include <execution>
+#include <future>
+#include <mutex>
 
 // Other:
-#include <algorithm> 
-#include <random>
-#include <memory>
+#include <algorithm>
 #include <chrono>
-#include <numeric>
 #include <cmath>
 #include <cstdlib>
 #include <limits>
+#include <memory>
+#include <numeric>
+#include <random>
 
 // GLM
 #include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #undef NOMINMAX

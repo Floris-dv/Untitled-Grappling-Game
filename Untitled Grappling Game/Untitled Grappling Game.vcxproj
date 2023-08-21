@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -49,6 +49,7 @@
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$SolutionDir)Dependencies\include</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x64);$(SolutionDir)Dependencies\lib;$(WindowsSDK_LibraryPath_x64)</LibraryPath>
     <CodeAnalysisRuleSet>MixedRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -64,14 +65,15 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>vendor\spdlog\include;vendor\assimp\include;vendor\GLFW\include;vendor\imgui;vendor\glm;src;vendor;$(SolutionDir)Dependencies\Include</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
-      <DisableSpecificWarnings>26812</DisableSpecificWarnings>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <DisableSpecificWarnings>26812;4514;4820</DisableSpecificWarnings>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -94,7 +96,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <DisableSpecificWarnings>26812; 4514</DisableSpecificWarnings>
+      <DisableSpecificWarnings>26812; 4514; 4061</DisableSpecificWarnings>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -103,9 +105,11 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>
       </MinimalRebuild>
-      <EnableEnhancedInstructionSet />
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
       <IntelJCCErratum />
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -120,6 +124,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\PostprocessingLayer.cpp" />
+    <ClCompile Include="src\Application.cpp" />
+    <ClCompile Include="src\Bloom.cpp" />
     <ClCompile Include="src\Game.cpp" />
     <ClCompile Include="src\Endscreen.cpp" />
     <ClCompile Include="src\GrapplingCamera.cpp" />
@@ -128,17 +135,13 @@
     <ClCompile Include="src\AABB.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\DataBuffers.cpp" />
-    <ClCompile Include="src\Framebuffers.cpp" />
     <ClCompile Include="src\Log.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Material.cpp" />
-    <ClCompile Include="src\Model.cpp" />
-    <ClCompile Include="src\MultiMesh.cpp" />
     <ClCompile Include="src\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\Setup.cpp" />
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\Texture.cpp" />
     <ClCompile Include="src\Window.cpp" />
@@ -383,6 +386,9 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\PostprocessingLayer.h" />
+    <ClInclude Include="src\Application.h" />
+    <ClInclude Include="src\Bloom.h" />
     <ClInclude Include="src\LevelTimer.h" />
     <ClInclude Include="src\Game.h" />
     <ClInclude Include="src\Endscreen.h" />
@@ -391,11 +397,9 @@
     <ClInclude Include="src\Level.h" />
     <ClInclude Include="src\AABB.h" />
     <ClInclude Include="src\DataBuffers.h" />
-    <ClInclude Include="src\Framebuffers.h" />
     <ClInclude Include="src\Levels.h" />
     <ClInclude Include="src\Log.h" />
     <ClInclude Include="src\Material.h" />
-    <ClInclude Include="src\MultiMesh.h" />
     <ClInclude Include="src\Object.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\Renderer.h" />
@@ -403,14 +407,12 @@
     <ClInclude Include="src\Shaders\Bloom.h" />
     <ClInclude Include="src\Shaders\MainFrag.h" />
     <ClInclude Include="src\Transform.h" />
-    <ClInclude Include="src\utils.h" />
+    <ClInclude Include="src\UtilityMacros.h" />
     <ClInclude Include="src\Vertex.h" />
     <ClInclude Include="src\VertexData.h" />
     <ClInclude Include="src\Texture.h" />
     <ClInclude Include="src\Camera.h" />
-    <ClInclude Include="src\Model.h" />
     <ClInclude Include="src\Settings.h" />
-    <ClInclude Include="src\Setup.h" />
     <ClInclude Include="src\Shader.h" />
     <ClInclude Include="src\Timer.h" />
     <ClInclude Include="vendor\imgui\imconfig.h" />

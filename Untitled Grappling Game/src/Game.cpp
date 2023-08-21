@@ -1,13 +1,9 @@
 #include "pch.h"
 
+#include "Bloom.h"
 #include "Game.h"
-#include "utils.h"
-
 #include "Levels.h"
-
-#include "Log.h"
-#include "Material.h"   // DEBUG
-#include "VertexData.h" // DEBUG
+#include "UtilityMacros.h"
 
 #include <imgui/imgui.h>
 
@@ -36,33 +32,13 @@ Camera::Camera_Movement Game::GetMovement() {
 
   return (Camera::Camera_Movement)movement;
 }
-extern bool paused;
-extern float lastX, lastY;
+
+// TODO: improve this
+static bool paused;
+static float lastX, lastY;
 static bool FirstFrame = true;
 
-Game::Game(std::unique_ptr<Camera> &&camera, Level &&level,
-           std::shared_ptr<Shader> instancedShader,
-           std::shared_ptr<Shader> normalShader, Window *window)
-    : m_Camera(std::move(camera)), m_Level(std::move(level)),
-      m_InstancedShader(std::move(instancedShader)),
-      m_NormalShader(std::move(normalShader)), m_Window(window),
-      m_MatrixUBO(sizeof(glm::mat4) + sizeof(glm::vec4), "Matrices") {
-
-  auto lightShader = std::make_shared<Shader>("src/Shaders/LightVert.vert",
-                                              "src/Shaders/LightFrag.frag");
-  auto lightMaterial = std::make_shared<Material>(
-      lightShader, glm::vec3{0.0f, 1.0f, 1.0f}, glm::vec3{0.0f, 0.0f, 0.0f});
-
-  m_MatrixUBO.Bind();
-  m_MatrixUBO.SetBlock(*m_NormalShader);
-  m_MatrixUBO.SetBlock(*m_InstancedShader);
-  m_MatrixUBO.SetBlock(*lightShader);
-
-  auto [vertices, indices](CreateSphere(20, 20));
-  Sphere = Object<MinimalVertex>(lightMaterial, vertices, MinimalVertex::Layout,
-                                 indices);
-
-  NG_INFO("SETTING");
+void Game::InitializeCallbacks() {
   m_Window->GetFunctions().CursorPosFn =
       [this](float fxpos,
              float fypos) { // to not flicker on the first frame, as the mouse
@@ -100,6 +76,64 @@ Game::Game(std::unique_ptr<Camera> &&camera, Level &&level,
 
         m_Camera->ProcessMouseMovement(xoffset, yoffset);
       };
+  m_Window->GetFunctions().KeyPressFn =
+      [this](Key key, [[maybe_unused]] int scanCode, Action action,
+             [[maybe_unused]] int mods) {
+        if (action == Action::PRESS) {
+          switch (key) {
+          case KEY_Q:
+            m_Window->SetShouldClose(true);
+            return;
+          case KEY_ESCAPE:
+            paused = !paused;
+            m_Window->SetCursor(paused);
+            return;
+          default:
+            break;
+          }
+        }
+      };
+}
+
+Game::Game(const std::string &startLevel, Shader *instancedShader,
+           Shader *normalShader, Shader *textureShader, Window *window)
+    : m_InstancedShader(instancedShader), m_NormalShader(normalShader),
+      m_UIShader(textureShader), m_Window(window), m_Level(startLevel),
+      m_MatrixUBO(sizeof(glm::mat4) + sizeof(glm::vec4), "Matrices"),
+      m_Camera(std::make_unique<GrapplingCamera>(
+          20.0f, 1.0f, Camera::CameraOptions{2.5f, 0.1f, 100.0f},
+          m_Window->GetAspectRatio(), glm::vec3{0.0f},
+          glm::vec3{0.0f, 1.0f, 0.0f}, 90.0f, 0.0f)) {
+  m_CrosshairTexture = StartLoadingTexture(
+      std::filesystem::path("resources/Textures/Crosshair.png"));
+
+  Settings.CameraOptions = &m_Camera->Options;
+
+  m_MatrixUBO.Bind();
+  m_MatrixUBO.SetBlock(*m_NormalShader);
+  m_MatrixUBO.SetBlock(*m_InstancedShader);
+
+  m_UIShader->Use();
+  m_UIShader->SetInt("crosshairTex", 7);
+}
+
+void Game::swap(Game &other) noexcept {
+  SWAP(m_InstancedShader);
+  SWAP(m_NormalShader);
+  SWAP(m_UIShader);
+  SWAP(m_Timer);
+  SWAP(m_State);
+  SWAP(m_Level);
+  SWAP(m_Window);
+  SWAP(m_Endscreen);
+  SWAP(m_StartTime);
+  SWAP(m_StartFrame);
+  SWAP(m_MatrixUBO);
+  SWAP(m_Camera);
+  SWAP(m_LevelNr);
+  SWAP(m_BlockEditingIndex);
+  SWAP(m_CrosshairTexture);
+  SWAP(Settings);
 }
 
 void Game::Update() {
@@ -118,6 +152,7 @@ void Game::Update() {
       m_Endscreen = Endscreen(
           "Level", std::chrono::duration_cast<std::chrono::milliseconds>(
                        std::chrono::duration<double>(m_Timer.GetTime())));
+
       m_Camera->Reset();
     }
     break;
@@ -130,16 +165,17 @@ void Game::Update() {
   case Game::GameState::Endscreen:
     switch (m_Endscreen.GetState()) {
     case Endscreen::State::Next_Level:
-      m_LevelNr++;
-      m_Level =
-          Level(GetLevelByNr(m_LevelNr), m_InstancedShader, m_NormalShader);
+      SetLevel(m_LevelNr + 1);
       m_Endscreen.Close();
+      m_State = GameState::Playing;
       break;
 
     case Endscreen::State::Restart:
-      m_Level =
-          Level(GetLevelByNr(m_LevelNr), m_InstancedShader, m_NormalShader);
+      SetLevel(m_LevelNr);
       m_Endscreen.Close();
+      m_State = GameState::Playing;
+      break;
+    default:
       break;
     }
     break;
@@ -154,16 +190,16 @@ void Game::Render() {
 
   switch (m_State) {
   case Game::GameState::Playing:
-    m_Level.Render();
+    m_Level.Render(m_InstancedShader, m_NormalShader);
     break;
 
   case Game::GameState::Editing:
-    m_Level.RenderEditingMode(m_BlockEditingIndex);
-    m_Level.RenderOneByOne();
+    m_Level.RenderEditingMode(m_BlockEditingIndex, m_Camera.get());
+    m_Level.RenderOneByOne(m_NormalShader, m_NormalShader);
     break;
 
   case Game::GameState::Endscreen:
-    m_Level.Render();
+    m_Level.Render(m_InstancedShader, m_NormalShader);
     m_Endscreen.Render();
     break;
   }
@@ -172,9 +208,13 @@ void Game::Render() {
 void Game::Finalize() {
   if (m_State == GameState::Playing) {
     if (m_Window->GetMouseButtonDown(1)) {
+      if (((GrapplingCamera *)m_Camera.get())->IsGrappling())
+        return;
+
       float depth;
-      glReadPixels(m_Window->GetWidth() / 2, m_Window->GetHeight() / 2, 1, 1,
-                   GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+      glReadPixels((int)m_Window->GetWidth() / 2,
+                   (int)m_Window->GetHeight() / 2, 1, 1, GL_DEPTH_COMPONENT,
+                   GL_FLOAT, &depth);
 
       float zNorm = 2.0f * depth - 1.0f;
       float zFar = m_Camera->Options.ZFar;
@@ -182,28 +222,45 @@ void Game::Finalize() {
       float zView =
           -2.0f * zNear * zFar / ((zFar - zNear) * zNorm - zNear - zFar);
 
-      m_SpherePos = m_Camera->Position + m_Camera->Front * zView;
+      glm::vec3 pos = m_Camera->Position + m_Camera->Front * zView;
 
-      if (zView < 80.0f) {
-        ((GrapplingCamera *)m_Camera.get())->LaunchAt(m_SpherePos);
-      }
+      if (zView < 80.0f)
+        ((GrapplingCamera *)m_Camera.get())->LaunchAt(pos);
+
     } else {
-      ((GrapplingCamera *)m_Camera.get())->LaunchAt(m_SpherePos);
+      ((GrapplingCamera *)m_Camera.get())->Release();
     }
-
-    glm::mat4 model(1.0f);
-    model = glm::translate(
-        model, ((GrapplingCamera *)Camera::Get())->GrapplingPosition());
-    Sphere.Draw(model, false);
-
-    // TODO: bloom
   }
+}
+
+void Game::DrawUI(VertexArray *screenVAO) {
+  if (m_CrosshairTexture.index())
+    m_CrosshairTexture =
+        std::get<LoadingTexture::Future>(m_CrosshairTexture).get()->Finish();
+
+  ImGui::DragFloat("Crosshair size", &m_CrosshairSize, 0.01f, 0.0f, 0.5f);
+
+  m_UIShader->Use();
+  glBindTextureUnit(7, std::get<Texture>(m_CrosshairTexture).ID);
+
+  m_UIShader->SetVec2(
+      "uSize", {m_CrosshairSize / m_Window->GetAspectRatio(), m_CrosshairSize});
+
+  screenVAO->Bind();
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+  screenVAO->UnBind();
 
   // TODO: draw crossair
 }
 
 void Game::SetLevel(int level) {
   m_LevelNr = level % NR_LEVELS;
-  m_Level = Level(GetLevelByNr(m_LevelNr), m_InstancedShader, m_NormalShader);
+  if (m_LevelNr == 0)
+    m_LevelNr = 1;
+  m_Level = Level(GetLevelByNr(m_LevelNr));
   m_Camera->Reset();
+}
+
+void Game::WindowResizeCallback(uint32_t width, uint32_t height) {
+  m_Camera->AspectRatio = (float)width / (float)height;
 }

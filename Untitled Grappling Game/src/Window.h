@@ -132,6 +132,7 @@ enum Key {
 enum class Action { RELEASE = 0, PRESS = 1, REPEAT = 2 };
 
 struct WindowFunctions {
+#pragma warning(disable : 4710) // function not inlined: don't want it to
   std::function<void(unsigned int c)> CharFn = [](...) {};
   std::function<void(void)> CloseFn = [](...) {};
   std::function<void(float x, float y)> CursorPosFn = [](...) {};
@@ -143,6 +144,7 @@ struct WindowFunctions {
   std::function<void(float xOffset, float yOffset)> ScrollFn = [](...) {};
   std::function<void(uint32_t newWidth, uint32_t newHeight)> WindowResizeFn =
       [](...) {};
+#pragma warning(default : 4061)
 };
 
 struct WindowProps {
@@ -173,10 +175,7 @@ public:
     return (float)GetWidth() / (float)GetHeight();
   }
 
-  WindowFunctions &GetFunctions() {
-    NG_INFO("GETTING");
-    return m_Props.Functions;
-  }
+  WindowFunctions &GetFunctions() { return m_Props.Functions; }
 
   void SetKey(Key key, std::function<void(void)> function);
 
@@ -204,18 +203,11 @@ public:
   bool GetMouseButtonDown(int button);
 
   // Destroyes GLFW and ImGui context
-  static void Destroy();
+  ~Window();
 
-  static void Initialize(const WindowProps &props) {
-    if (!s_Window)
-      s_Window = new Window(props);
-  }
-
-  static Window &Get() { return *s_Window; }
-
-private:
   explicit Window(const WindowProps &props) { Init(props); }
 
+private:
   // Setups ImGui for this window, needs to happen after we installed callbacks:
   // ImGui will take the input if necessary and pass it onto this
   void SetupImGui();

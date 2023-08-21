@@ -10,14 +10,14 @@ layout(binding = 1) uniform sampler2D u_Texture;
 layout(binding = 2) uniform sampler2D u_BloomTexture;
 
 layout (location = 0) uniform vec4 Params; // x: threshold, y: threshold - knee, z: knee * 2, w: 0.25 / knee
-layout (location = 1) uniform vec2 LodAndMode;
+layout (location = 1) uniform ivec2 LodAndMode;
 
 #define BLOOM_MODE_PREFILTER      0
 #define BLOOM_MODE_DOWNSAMPLE     1
 #define BLOOM_MODE_UPSAMPLE_FIRST 2
 #define BLOOM_MODE_UPSAMPLE       3
 
-vec3 DownsampleBox13(sampler2D tex, float lod, vec2 uv, vec2 texelSize)
+vec3 DownsampleBox13(sampler2D tex, int lod, vec2 uv, vec2 texelSize)
 {
     // Center
     vec3 A = textureLod(tex, uv, lod).rgb;
@@ -61,7 +61,7 @@ vec3 DownsampleBox13(sampler2D tex, float lod, vec2 uv, vec2 texelSize)
 
 // Quadratic color thresholding
 // curve = (threshold - knee, knee * 2, 0.25 / knee)
-vec4 QuadraticThreshold(vec4 color, float threshold, vec3 curve)
+vec3 QuadraticThreshold(vec3 color, float threshold, vec3 curve)
 {
     // Maximum pixel brightness
     float brightness = max(max(color.r, color.g), color.b);
@@ -72,16 +72,16 @@ vec4 QuadraticThreshold(vec4 color, float threshold, vec3 curve)
     return color;
 }
 
-vec4 Prefilter(vec4 color, vec2 uv)
+vec3 Prefilter(vec3 color, vec2 uv)
 {
     float clampValue = 20.0f;
-    color = min(vec4(clampValue), color);
+    color = min(vec3(clampValue), color);
     color = QuadraticThreshold(color, Params.x, Params.yzw);
     color /= Params.x;
     return color;
 }
 
-vec3 UpsampleTent9(sampler2D tex, float lod, vec2 uv, vec2 texelSize, float radius)
+vec3 UpsampleTent9(sampler2D tex, int lod, vec2 uv, vec2 texelSize, float radius)
 {
     vec4 offset = texelSize.xyxy * vec4(1.0f, 1.0f, -1.0f, 0.0f) * radius;
 
@@ -111,38 +111,37 @@ void main()
     vec2 texCoords = vec2(float(invocID.x) / imgSize.x, float(invocID.y) / imgSize.y);
     texCoords += (1.0f / imgSize) * 0.5f;
 
-    vec2 texSize = vec2(textureSize(u_Texture, int(LodAndMode.x)));
-    vec4 color = vec4(1, 0, 1, 1);
+    vec2 texSize = vec2(textureSize(u_Texture, LodAndMode.x));
+    vec3 color = vec3(1, 0, 1);
 
-    if (uint(LodAndMode.y) == BLOOM_MODE_PREFILTER)
+    if (LodAndMode.y == BLOOM_MODE_PREFILTER)
     {
         color.rgb = DownsampleBox13(u_Texture, 0, texCoords, 1.0f / texSize);
         color = Prefilter(color, texCoords);
-        color.a = 1.0f;
     }
-    else if (uint(LodAndMode.y) == BLOOM_MODE_UPSAMPLE_FIRST)
+    else if (LodAndMode.y == BLOOM_MODE_UPSAMPLE_FIRST)
     {
-        vec2 bloomTexSize = vec2(textureSize(u_Texture, int(LodAndMode.x + 1.0f)));
+        vec2 bloomTexSize = vec2(textureSize(u_Texture, LodAndMode.x + 1));
         float sampleScale = 1.0f;
-        vec3 upsampledTexture = UpsampleTent9(u_Texture, LodAndMode.x + 1.0f, texCoords, 1.0f / bloomTexSize, sampleScale);
+        vec3 upsampledTexture = UpsampleTent9(u_Texture, LodAndMode.x + 1, texCoords, 1.0f / bloomTexSize, sampleScale);
 
         vec3 existing = textureLod(u_Texture, texCoords, LodAndMode.x).rgb;
         color.rgb = existing + upsampledTexture;
     }
-    else if (uint(LodAndMode.y) == BLOOM_MODE_UPSAMPLE)
+    else if (LodAndMode.y == BLOOM_MODE_UPSAMPLE)
     {
-        vec2 bloomTexSize = vec2(textureSize(u_BloomTexture, int(LodAndMode.x + 1.0f)));
+        vec2 bloomTexSize = vec2(textureSize(u_BloomTexture, LodAndMode.x + 1));
         float sampleScale = 1.0f;
-        vec3 upsampledTexture = UpsampleTent9(u_BloomTexture, LodAndMode.x + 1.0f, texCoords, 1.0f / bloomTexSize, sampleScale);
+        vec3 upsampledTexture = UpsampleTent9(u_BloomTexture, LodAndMode.x + 1, texCoords, 1.0f / bloomTexSize, sampleScale);
 
         vec3 existing = textureLod(u_Texture, texCoords, LodAndMode.x).rgb;
         color.rgb = existing + upsampledTexture;
     }
-    else if (uint(LodAndMode.y) == BLOOM_MODE_DOWNSAMPLE)
+    else if (LodAndMode.y == BLOOM_MODE_DOWNSAMPLE)
     {
         // Downsample
         color.rgb = DownsampleBox13(u_Texture, LodAndMode.x, texCoords, 1.0f / texSize);
     }
 
-    imageStore(o_Image, ivec2(gl_GlobalInvocationID), color);
+    imageStore(o_Image, ivec2(gl_GlobalInvocationID), vec4(color, 1.0));
 } 
