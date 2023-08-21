@@ -6,3 +6,6 @@
 
 // glad
 #include "glad/glad.c"
+
+#define MINIAUDIO_IMPLEMENTATION
+#include "miniaudio/miniaudio.h"

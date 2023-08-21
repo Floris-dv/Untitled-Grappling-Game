@@ -4,6 +4,7 @@
 #include "Material.h"
 #include "Object.h"
 #include "UtilityMacros.h"
+#include "Window.h"
 
 /* TODO
  * Structure that I want:
@@ -29,11 +30,7 @@ public:
 public:
   Level() : m_AllowEditing(true) {}
 
-  Level(const glm::vec3 &startPlatformSize, const Block &finishBox,
-        std::vector<Block> &&blocks, EmptyMaterial &&normalMaterial,
-        EmptyMaterial &&finishMaterial);
-
-  Level(const std::string &levelFile);
+  Level(const std::string &levelFile, Window *window);
 
   Level(Level &&level) noexcept { swap(level); }
 
@@ -83,6 +80,9 @@ private:
   std::string m_FileName;
 
   bool m_AllowEditing;
+
+  const std::function<std::string(void)> m_GetFileName;
+  const std::function<float(void)> m_GetTime;
 
   static constexpr uint32_t VERSION_NR = VERSION(0, 0, 1);
 

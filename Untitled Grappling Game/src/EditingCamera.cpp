@@ -1,5 +1,6 @@
-#include "EditingCamera.h"
 #include "pch.h"
+
+#include "EditingCamera.h"
 
 EditingCamera::EditingCamera(CameraOptions options, float aspectRatio,
                              glm::vec3 position, glm::vec3 up, float yaw,

@@ -29,22 +29,11 @@ inline IStream &operator>>(IStream &input, Level::Block &output) {
   return input;
 }
 
-Level::Level(const glm::vec3 &startPlatformSize, const Block &finishBox,
-             std::vector<Block> &&blocks, EmptyMaterial &&normalMaterial,
-             EmptyMaterial &&finishMaterial)
-    : m_Blocks(std::move(blocks)), m_MainMaterial(std::move(normalMaterial)),
-      m_FinishMaterial(std::move(finishMaterial)), m_AllowEditing(true) {
-  m_Blocks.insert(
-      m_Blocks.begin(),
-      {finishBox,
-       {{-startPlatformSize.x * 0.5f, -startPlatformSize.y,
-         -startPlatformSize.z * 0.5f},
-        {startPlatformSize.x * 0.5f, 0.0f, startPlatformSize.z * 0.5f}}});
-  SetupMatrices();
-  SetupInstanceVBO();
-}
-
-Level::Level(const std::string &levelFile) : m_FileName(levelFile) {
+Level::Level(const std::string &levelFile, Window *window)
+    : m_FileName(levelFile),
+      m_GetFileName(
+          std::bind(GetSaveFileNameAllPlatforms, window->GetGLFWWindow())),
+      m_GetTime(std::bind(&Window::GetTime, window)) {
   std::ifstream file(levelFile, std::ios::in | std::ios::binary);
 
   if (!file)
@@ -211,7 +200,7 @@ void Level::RenderEditingMode(size_t &index, Camera *camera) {
                        nullptr, useSnap ? &snap.x : nullptr);
 
   if (ImGui::Button("Save as")) {
-    m_FileName = GetSaveFileNameAllPlatforms(Window::Get().GetGLFWWindow());
+    m_FileName = m_GetFileName();
     Write(m_FileName);
   }
   if (!m_FileName.empty())
@@ -244,7 +233,7 @@ static void BounceOn(const Level::Block &block, GrapplingCamera &camera);
 bool Level::UpdatePhysics(GrapplingCamera &camera) {
   if (m_StartTime == 0.0f &&
       (glm::abs(camera.Vel.x) + glm::abs(camera.Vel.z)) > 0.0f) {
-    m_StartTime = glfwGetTime();
+    m_StartTime = m_GetTime();
   }
 
   if (camera.PhysicsPosition.y < -50.0f) {

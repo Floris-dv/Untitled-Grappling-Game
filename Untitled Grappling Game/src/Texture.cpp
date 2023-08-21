@@ -51,7 +51,7 @@ LoadingTexture::LoadingTexture(const std::filesystem::path &fname,
   default:
     NG_ERROR("Texture in file {} is weird: it has {} amount of channels, "
              "instead of the normal 1, 3, or 4. Error: {}",
-             fname, channels, stbi_failure_reason());
+             fname.string(), channels, stbi_failure_reason());
     break;
   }
 

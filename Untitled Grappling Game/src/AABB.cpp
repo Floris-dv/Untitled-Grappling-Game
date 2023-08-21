@@ -1,5 +1,6 @@
-#include "AABB.h"
 #include "pch.h"
+
+#include "AABB.h"
 
 bool BoundingVolume::isOnFrustum(const Frustum &camFrustum) const {
   return (isOnOrForwardPlane(camFrustum.leftFace) &&

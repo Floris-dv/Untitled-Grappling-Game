@@ -3,6 +3,7 @@
 #include "Bloom.h"
 #include "Game.h"
 #include "Levels.h"
+#include "SaveFile.h"
 #include "UtilityMacros.h"
 
 #include <imgui/imgui.h>
@@ -98,7 +99,7 @@ void Game::InitializeCallbacks() {
 Game::Game(const std::string &startLevel, Shader *instancedShader,
            Shader *normalShader, Shader *textureShader, Window *window)
     : m_InstancedShader(instancedShader), m_NormalShader(normalShader),
-      m_UIShader(textureShader), m_Window(window), m_Level(startLevel),
+      m_UIShader(textureShader), m_Window(window), m_Level(startLevel, window),
       m_MatrixUBO(sizeof(glm::mat4) + sizeof(glm::vec4), "Matrices"),
       m_Camera(std::make_unique<GrapplingCamera>(
           20.0f, 1.0f, Camera::CameraOptions{2.5f, 0.1f, 100.0f},
@@ -257,7 +258,7 @@ void Game::SetLevel(int level) {
   m_LevelNr = level % NR_LEVELS;
   if (m_LevelNr == 0)
     m_LevelNr = 1;
-  m_Level = Level(GetLevelByNr(m_LevelNr));
+  m_Level = Level(GetLevelByNr(m_LevelNr), m_Window);
   m_Camera->Reset();
 }
 
