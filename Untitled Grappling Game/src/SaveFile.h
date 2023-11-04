@@ -4,18 +4,21 @@
 static std::string GetSaveFileNameAllPlatforms(GLFWwindow *window);
 
 #if _WIN32
-#include <commdlg.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
+
+#include <Windows.h>
+#include <commdlg.h>
 static std::string GetSaveFileNameAllPlatforms(GLFWwindow *window) {
   typedef std::remove_const_t<
       std::remove_pointer_t<decltype(OPENFILENAME::lpstrFilter)>>
       charT;
-  const decltype(OPENFILENAME::lpstrFilter) strFilter =
-      reinterpret_cast<const decltype(OPENFILENAME::lpstrFilter)>(
-          std::is_same_v<charT, WCHAR>
-              ? (void *)L"All files\0*.*\0Level data\0*.dat\0"
-              : (void *)"All files\0*.*\0Level data\0*.dat\0");
+  static constexpr decltype(OPENFILENAME::lpstrFilter) strFilter =
+      std::is_same_v<charT, WCHAR>
+          ? (decltype(OPENFILENAME::
+                          lpstrFilter))L"All files\0*.*\0Level data\0*.dat\0"
+          : (decltype(OPENFILENAME::
+                          lpstrFilter))"All files\0*.*\0Level data\0*.dat\0";
 
   // All of this straight from
   // https://learn.microsoft.com/en-us/windows/win32/dlgbox/using-common-dialog-boxes
@@ -45,8 +48,6 @@ static std::string GetSaveFileNameAllPlatforms(GLFWwindow *window) {
 
     // TODO: if constexpr (std::is_same_v<charT, WCHAR>) {
 #ifdef _MSC_VER
-  std::mbstate_t state{};
-
   char fName[260 * 4];
   size_t size = 0;
   errno_t res;
@@ -56,9 +57,6 @@ static std::string GetSaveFileNameAllPlatforms(GLFWwindow *window) {
   }
 
   return std::string(fName, size);
-  /* }
-  else
-  */
 #else
   return std::basic_string<charT>(szFile);
 #endif

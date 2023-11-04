@@ -1,4 +1,5 @@
 #pragma once
+#include "AudioSystem.h"
 #include "Bloom.h"
 #include "Camera.h"
 #include "Endscreen.h"
@@ -6,6 +7,7 @@
 #include "LevelTimer.h"
 #include "Shader.h"
 #include "Window.h"
+#include <optional>
 
 class Game {
 public:
@@ -16,6 +18,8 @@ protected:
   Shader *m_InstancedShader = nullptr;
   Shader *m_NormalShader = nullptr;
   Shader *m_UIShader = nullptr;
+
+  std::optional<AudioSystem> m_AudioSystem;
 
   float m_CrosshairSize = 0.1f;
   std::variant<Texture, LoadingTexture::Future> m_CrosshairTexture;
@@ -51,7 +55,7 @@ public:
     BloomSettings BloomSettings;
   } Settings;
 
-  Game() : Settings({nullptr, BloomSettings{false}}) {}
+  Game() : Settings({nullptr, BloomSettings{0.8f, 0.05f, {0, 0}, 0, false}}) {}
 
   Game(const std::string &startLevel, Shader *instancedShader,
        Shader *normalShader, Shader *textureShader, Window *window);

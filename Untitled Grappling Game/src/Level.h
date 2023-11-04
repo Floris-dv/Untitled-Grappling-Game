@@ -22,6 +22,7 @@ public:
   struct Block {
     glm::vec3 Start = glm::vec3{0.0f};
     glm::vec3 End = glm::vec3{0.0f};
+    float elasticity = 0.1f;
     glm::quat Rotation = {1.0f, 0.0f, 0.0f, 0.0f};
 
     inline static Object<SimpleVertex> Object;
@@ -81,8 +82,7 @@ private:
 
   bool m_AllowEditing;
 
-  const std::function<std::string(void)> m_GetFileName;
-  const std::function<float(void)> m_GetTime;
+  Window *m_Window;
 
   static constexpr uint32_t VERSION_NR = VERSION(0, 0, 1);
 
@@ -91,6 +91,8 @@ private:
 
   // Uses m_Blocks to setup m_Matrices
   void SetupMatrices();
+
+  float SDF(const glm::vec3 &samplePoint);
 };
 
 OVERLOAD_STD_SWAP(Level)

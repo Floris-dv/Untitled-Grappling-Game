@@ -1,9 +1,13 @@
+#include "UtilityMacros.h"
 #include "pch.h"
 #ifdef _WIN32
 #include <Windows.h>
 #endif
 
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_DEPRECATION
 #include <glad/glad.h>
+DISABLE_WARNING_POP
 
 #include <GLFW/glfw3.h>
 
@@ -41,14 +45,16 @@ void Window::Init(const WindowProps &props) {
   });
 #endif
 
-  m_Window = glfwCreateWindow((int)props.Width, (int)props.Height,
+  m_Window = glfwCreateWindow(static_cast<int>(props.Width),
+                              static_cast<int>(props.Height),
                               m_Props.Title.c_str(), nullptr, nullptr);
 
   glfwMakeContextCurrent(m_Window);
   glfwSetWindowAttrib(m_Window, GLFW_MOUSE_PASSTHROUGH, false);
 
   m_Props = props;
-  m_Props.Functions.WindowResizeFn = [](uint32_t width, uint32_t height) {};
+  m_Props.Functions.WindowResizeFn = []([[maybe_unused]] uint32_t width,
+                                        [[maybe_unused]] uint32_t height) {};
   m_Props.WindowRef = this;
 
   glfwSetWindowUserPointer(m_Window, &m_Props);
@@ -89,22 +95,23 @@ void Window::Init(const WindowProps &props) {
     }
   });
 
-  glfwSetMouseButtonCallback(
-      m_Window, [](GLFWwindow *window, int button, int action, int modifiers) {
-        WindowProps &data = *(WindowProps *)glfwGetWindowUserPointer(window);
+  glfwSetMouseButtonCallback(m_Window, [](GLFWwindow *window, int button,
+                                          int action,
+                                          [[maybe_unused]] int modifiers) {
+    WindowProps &data = *(WindowProps *)glfwGetWindowUserPointer(window);
 
-        switch (action) {
-        case GLFW_PRESS:
-          data.Functions.PressMouseFn(button);
-          break;
-        case GLFW_RELEASE:
-          data.Functions.ReleaseMouseFn(button);
-          break;
-        case GLFW_REPEAT:
-          data.Functions.HeldMouseFn(button);
-          break;
-        }
-      });
+    switch (action) {
+    case GLFW_PRESS:
+      data.Functions.PressMouseFn(button);
+      break;
+    case GLFW_RELEASE:
+      data.Functions.ReleaseMouseFn(button);
+      break;
+    case GLFW_REPEAT:
+      data.Functions.HeldMouseFn(button);
+      break;
+    }
+  });
 
   glfwSetScrollCallback(
       m_Window, [](GLFWwindow *window, double xOffset, double yOffset) {
@@ -121,6 +128,7 @@ void Window::Init(const WindowProps &props) {
           glfwGetFramebufferSize(window, &width, &height);
           glfwWaitEvents();
         }
+        uint32_t uWidth = (uint32_t)width, uHeight = (uint32_t)height;
 
         if (isMinimized)
           return; // The new call to this callback will fix it: don't want a
@@ -128,10 +136,10 @@ void Window::Init(const WindowProps &props) {
 
         WindowProps &data = *(WindowProps *)glfwGetWindowUserPointer(window);
 
-        data.Width = width;
-        data.Height = height;
+        data.Width = uWidth;
+        data.Height = uHeight;
 
-        data.Functions.WindowResizeFn(width, height);
+        data.Functions.WindowResizeFn(uWidth, uHeight);
       });
 
 #pragma endregion
@@ -151,7 +159,7 @@ void Window::SetKey(Key key, std::function<void(void)> function) {
 }
 
 void Window::SetVSync(bool vSync) {
-  glfwSwapInterval((int)vSync);
+  glfwSwapInterval(static_cast<int>(vSync));
   m_Props.VSync = vSync;
   return;
 }
@@ -174,7 +182,7 @@ void Window::SetShouldClose(bool shouldClose) {
 }
 
 bool Window::GetKeyPressed(Key key) {
-  return (bool)glfwGetKey(m_Window, (int)key);
+  return glfwGetKey(m_Window, static_cast<int>(key)) == GLFW_PRESS;
 }
 
 bool Window::GetMouseButtonDown(int button) {

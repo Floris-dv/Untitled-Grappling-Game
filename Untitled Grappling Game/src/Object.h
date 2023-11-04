@@ -7,7 +7,7 @@
 
 template <typename T = Vertex> struct Object {
 private:
-  unsigned int m_NumVerts;
+  GLsizei m_NumVerts;
   bool m_UseIBO = false;
 
   VertexBuffer m_VBO;
@@ -18,7 +18,7 @@ private:
 
   void DoDrawCall();
 
-  void DoInstancedDrawCall(unsigned int count);
+  void DoInstancedDrawCall(GLsizei count);
 
 public:
   VertexArray VAO;
@@ -34,7 +34,9 @@ public:
          const BufferLayout &bufferLayout)
       : Object(material, vertices, bufferLayout, std::span<GLuint, 0>()) {}
 
-  DELETE_COPY_CONSTRUCTOR(Object<T>)
+  Object(const Object<T> &other) =
+      delete; // apperently, this is the only thing that works on my machine
+  Object<T> &operator=(const Object<T> &other) = delete;
 
   virtual ~Object() noexcept {}
 
@@ -55,11 +57,11 @@ public:
 
   void Draw(const glm::mat4 &modelMatrix, Shader *shader);
 
-  void DrawInstanced(bool setMaterial, unsigned int count) {
+  void DrawInstanced(bool setMaterial, GLsizei count) {
     DrawInstanced(m_MainMaterial.get(), setMaterial, count);
   }
 
-  void DrawInstanced(Material *material, bool setMaterial, unsigned int count) {
+  void DrawInstanced(Material *material, bool setMaterial, GLsizei count) {
     if (setMaterial)
       DrawInstanced((EmptyMaterial *)material, material->GetShader(), count);
     else
@@ -67,9 +69,9 @@ public:
   }
 
   void DrawInstanced(EmptyMaterial *material, Shader *shader,
-                     unsigned int count);
+                     GLsizei count);
 
-  void DrawInstanced(Shader *shader, unsigned int count);
+  void DrawInstanced(Shader*shader, GLsizei count);
 
   virtual void SetInstanceBuffer(const VertexBuffer &instanceBuffer);
 
@@ -111,7 +113,7 @@ inline void Object<T>::Draw(const glm::mat4 &modelMatrix, Shader *shader) {
 
 template <typename T>
 void Object<T>::DrawInstanced(EmptyMaterial *material, Shader *shader,
-                              unsigned int count) {
+                              GLsizei count) {
   if (!m_NumVerts)
     return;
 
@@ -121,7 +123,7 @@ void Object<T>::DrawInstanced(EmptyMaterial *material, Shader *shader,
 }
 
 template <typename T>
-inline void Object<T>::DrawInstanced(Shader *shader, unsigned int count) {
+inline void Object<T>::DrawInstanced(Shader *shader, GLsizei count) {
   if (!m_NumVerts)
     return;
 
@@ -137,7 +139,7 @@ void Object<T>::SetInstanceBuffer(const VertexBuffer &instanceBuffer) {
 }
 
 template <typename T>
-inline void Object<T>::DoInstancedDrawCall(unsigned int count) {
+inline void Object<T>::DoInstancedDrawCall(GLsizei count) {
   VAO.Bind();
   if (m_UseIBO)
     glDrawElementsInstanced(GL_TRIANGLES, m_NumVerts, GL_UNSIGNED_INT,
@@ -177,14 +179,15 @@ inline Object<T>::Object(std::shared_ptr<Material> material,
                          const std::span<T> vertices,
                          const BufferLayout &bufferLayout,
                          const std::span<GLuint> indices)
-    : m_MainMaterial(std::move(material)), m_UseIBO(!indices.empty()),
-      m_VBO(vertices.size_bytes(), vertices.data()) {
+    : m_UseIBO(!indices.empty()), 
+      m_VBO((unsigned int)vertices.size_bytes(), vertices.data()), 
+      m_MainMaterial(std::move(material)){
   VAO.AddBuffer(m_VBO, bufferLayout);
 
   if (m_UseIBO) {
-    m_NumVerts = indices.size();
+    m_NumVerts = (GLsizei)indices.size();
     m_IBO = IndexBuffer(indices.size_bytes(), indices.data());
     VAO.AddIndexBuffer(m_IBO);
   } else
-    m_NumVerts = vertices.size();
+    m_NumVerts = (GLsizei)vertices.size();
 }

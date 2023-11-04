@@ -32,7 +32,7 @@ public:
       return;
 
     NG_TRACE("{} took {:.1f} ms", Name,
-             std::chrono::duration_cast<std::chrono::microseconds>(
+             (float)std::chrono::duration_cast<std::chrono::microseconds>(
                  std::chrono::steady_clock::now() - Begin)
                      .count() /
                  1000.0f);
@@ -63,7 +63,7 @@ public:
       return;
 
     ImGui::Text("%s took %.2f ms", Name.c_str(),
-                std::chrono::duration_cast<std::chrono::microseconds>(
+                (float)std::chrono::duration_cast<std::chrono::microseconds>(
                     std::chrono::steady_clock::now() - Begin)
                         .count() /
                     1000.0f);

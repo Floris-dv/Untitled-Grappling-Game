@@ -31,10 +31,33 @@
 *.out
 *.app
 
+# Visual studio stuff
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+
+# CMake shenanigans
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+CMakeFiles/
+build/
+
+# Custom stuff
 .vs/
 x64/
-/Untitled Grappling Game/imgui.ini
-/Untitled Grappling Game/Logging.log
 /Untitled Grappling Game/Level.dat
+Logging.log
+imgui.ini
 Dist/
 Dist.zip
+.cache/

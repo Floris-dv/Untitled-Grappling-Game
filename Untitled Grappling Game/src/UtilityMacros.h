@@ -22,3 +22,43 @@
 #define DELETE_COPY_CONSTRUCTOR(classname)                                     \
   classname(const classname &other) = delete;                                  \
   classname &operator=(const classname &other) = delete;
+
+#if defined(_MSC_VER)
+
+#define DISABLE_WARNING_PUSH __pragma(warning(push))
+#define DISABLE_WARNING_POP __pragma(warning(pop))
+#define DISABLE_WARNING(warningNumber)                                         \
+  __pragma(warning(disable : warningNumber))
+#define DISABLE_ALL_WARNINGS __pragma(warning(push, 0))
+#define SUPPRESS_WARNING_ONE_LINE(warningNumber)                               \
+  __pragma(warning(suppress : warningNumber))
+#define SUPPRESS_DEPRECATION_WARNING SUPPRESS_WARNING_ONE_LINE(4996)
+#define DISABLE_WARNING_DEPRECATION DISABLE_WARNING(4996)
+#define DISABLE_WARNING_LANGUAGE_EXTENSION
+
+#elif defined(__GNUC__) || defined(__clang__)
+
+#define DO_PRAGMA(X) _Pragma(#X);
+#define DISABLE_WARNING_PUSH(warningname)                                      \
+  DO_PRAGMA(GCC diagnostic ignored #warningname)
+#define DISABLE_WARNING_PUSH_STRING(warningname)                               \
+  DO_PRAGMA(GCC diagnostic ignored warningname)
+#define DISABLE_ALL_WARNINGS                                                   \
+  DISABLE_WARNING_PUSH                                                         \
+  DISABLE_WARNING_PUSH(-Wall)                                                  \
+  DISABLE_WARNING_PUSH(-Wextra)                                                \
+  DISABLE_WARNING_PUSH(-Wconversion) DISABLE_WARNING_PUSH(-Wpedantic)
+
+#define DISABLE_WARNING_PUSH DO_PRAGMA(GCC diagnostic push)
+#define DISABLE_WARNING_POP DO_PRAGMA(GCC diagnostic pop)
+#define DISABLE_WARNING_LANGUAGE_EXTENSION                                     \
+  DISABLE_WARNING_PUSH("-Wlanguage-extension-token")
+
+#else
+
+#define DISABLE_WARNING_PUSH
+#define DISABLE_WARNING_POP
+#define DISABLE_WARNING_LANGUAGE_EXTENSION
+#define DISABLE_ALL_WARNINGS
+
+#endif

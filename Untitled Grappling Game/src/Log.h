@@ -1,15 +1,17 @@
 #pragma once
 #include "Settings.h"
+#include "UtilityMacros.h"
 
 #if !DIST
-// This ignores all warnings raised inside External headers
-#pragma warning(push, 0)
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_DEPRECATION
+
 #include <spdlog/fmt/ostr.h>
 #include <spdlog/spdlog.h>
-#pragma warning(pop)
-
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/string_cast.hpp"
+
+DISABLE_WARNING_POP
 
 #ifndef OVERLOAD_GLM_OSTREAM
 #define OVERLOAD_GLM_OSTREAM 1

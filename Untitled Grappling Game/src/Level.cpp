@@ -30,10 +30,7 @@ inline IStream &operator>>(IStream &input, Level::Block &output) {
 }
 
 Level::Level(const std::string &levelFile, Window *window)
-    : m_FileName(levelFile),
-      m_GetFileName(
-          std::bind(GetSaveFileNameAllPlatforms, window->GetGLFWWindow())),
-      m_GetTime(std::bind(&Window::GetTime, window)) {
+    : m_FileName(levelFile), m_Window(window) {
   std::ifstream file(levelFile, std::ios::in | std::ios::binary);
 
   if (!file)
@@ -79,7 +76,7 @@ void Level::Write(std::string_view levelFile) {
 
 void Level::Render(Material *material, Material *finishMaterial) {
   Block::Object.DrawInstanced(material, true,
-                              (unsigned int)m_Matrices.size() -
+                              (GLsizei)m_Matrices.size() -
                                   1); // finish box needs to be another color
   Block::Object.Draw(m_Matrices.front(), finishMaterial, true);
 }
@@ -88,7 +85,7 @@ void Level::Render(Shader *shader, Shader *finishShader) {
   m_FinishMaterial.Load(*finishShader);
 
   Block::Object.DrawInstanced(&m_MainMaterial, shader,
-                              (unsigned int)m_Matrices.size() - 1);
+                              (GLsizei)m_Matrices.size() - 1);
 
   Block::Object.Draw(m_Matrices.front(), &m_FinishMaterial, finishShader);
 }
@@ -163,7 +160,7 @@ void Level::RenderEditingMode(size_t &index, Camera *camera) {
               m_Blocks[index].Rotation.w);
 
   m_Blocks[index] = {matrixTranslation - matrixScale * 0.5f,
-                     matrixTranslation + matrixScale * 0.5f,
+                     matrixTranslation + matrixScale * 0.5f, 0.1f,
                      glm::quat(glm::radians(matrixRotation))};
 
   if (s_CurrentGizmoOperation != ImGuizmo::SCALE) {
@@ -200,7 +197,7 @@ void Level::RenderEditingMode(size_t &index, Camera *camera) {
                        nullptr, useSnap ? &snap.x : nullptr);
 
   if (ImGui::Button("Save as")) {
-    m_FileName = m_GetFileName();
+    m_FileName = GetSaveFileNameAllPlatforms(m_Window->GetGLFWWindow());
     Write(m_FileName);
   }
   if (!m_FileName.empty())
@@ -233,7 +230,7 @@ static void BounceOn(const Level::Block &block, GrapplingCamera &camera);
 bool Level::UpdatePhysics(GrapplingCamera &camera) {
   if (m_StartTime == 0.0f &&
       (glm::abs(camera.Vel.x) + glm::abs(camera.Vel.z)) > 0.0f) {
-    m_StartTime = m_GetTime();
+    m_StartTime = m_Window->GetTime();
   }
 
   if (camera.PhysicsPosition.y < -50.0f) {
@@ -254,6 +251,8 @@ bool Level::UpdatePhysics(GrapplingCamera &camera) {
     }
   }
 
+  ImGui::Text("Distance from camera: %f", SDF(camera.PhysicsPosition));
+
   if (CollisionCheck(cameraBox, OBB(m_Blocks.front())))
     return true;
 
@@ -263,9 +262,10 @@ bool Level::UpdatePhysics(GrapplingCamera &camera) {
 // Needs to be called when switching from RenderOneByOne() to Render()
 
 void Level::UpdateInstanceVBO() {
-  glNamedBufferData(m_InstanceVBO.ID(),
-                    (GLsizeiptr)(m_Matrices.size() - 1) * sizeof(m_Matrices[0]),
-                    &m_Matrices[1], GL_STATIC_DRAW);
+  glNamedBufferData(
+      m_InstanceVBO.ID(),
+      (GLsizeiptr)((m_Matrices.size() - 1) * sizeof(m_Matrices[0])),
+      &m_Matrices[1], GL_STATIC_DRAW);
 }
 
 void Level::SetupInstanceVBO() {
@@ -383,4 +383,23 @@ static void BounceOn(const Level::Block &block, GrapplingCamera &camera) {
   camera.Position = {camera.PhysicsPosition.x,
                      camera.PhysicsPosition.y + PHYSICSOFFSET,
                      camera.PhysicsPosition.z};
+}
+
+float Level::SDF(const glm::vec3 &samplePoint) {
+  float distance = std::numeric_limits<float>::max();
+
+  for (size_t i = 1; i < m_Blocks.size() - 1; i++) {
+    const auto &block = m_Blocks[i];
+    glm::vec3 copy = samplePoint;
+    glm::vec3 blockSize = block.End - block.Start;
+    glm::vec3 blockCenter = (block.Start + block.End) * 0.5f;
+    copy -= blockCenter;
+    copy = glm::conjugate(block.Rotation) * copy;
+    glm::vec3 q = glm::abs(copy) - blockSize;
+    distance = glm::min(length(glm::max(q, glm::vec3(0.0))) +
+                            glm::min(glm::max(q.x, glm::max(q.y, q.z)), 0.0f),
+                        distance);
+  };
+
+  return distance;
 }

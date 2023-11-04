@@ -57,7 +57,7 @@ void Game::InitializeCallbacks() {
           if (m_Window->GetMouseButtonDown(0)) {
             // unless over an ImGUI window or its items (those are counted
             // seperately when focused)
-            if (!(ImGui::IsWindowFocused(4) ||
+            if (!(ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow) ||
                   ImGui::IsAnyItemFocused())) // 4 means: is any window focused
               goto out; // I know this isn't recommended, but if I avoid it it
                         // makes for some ugly code
@@ -69,9 +69,8 @@ void Game::InitializeCallbacks() {
         }
       out:
         const float xoffset = fxpos - lastX;
-        const float yoffset =
-            lastY -
-            fypos; // reversed since y-coordinates range from bottom to top
+        // reversed since y-coordinates range from bottom to top
+        const float yoffset = lastY - fypos;
         lastX = fxpos;
         lastY = fypos;
 
@@ -99,7 +98,8 @@ void Game::InitializeCallbacks() {
 Game::Game(const std::string &startLevel, Shader *instancedShader,
            Shader *normalShader, Shader *textureShader, Window *window)
     : m_InstancedShader(instancedShader), m_NormalShader(normalShader),
-      m_UIShader(textureShader), m_Window(window), m_Level(startLevel, window),
+      m_UIShader(textureShader), m_AudioSystem(nullptr),
+      m_Level(startLevel, window), m_Window(window),
       m_MatrixUBO(sizeof(glm::mat4) + sizeof(glm::vec4), "Matrices"),
       m_Camera(std::make_unique<GrapplingCamera>(
           20.0f, 1.0f, Camera::CameraOptions{2.5f, 0.1f, 100.0f},
@@ -107,6 +107,8 @@ Game::Game(const std::string &startLevel, Shader *instancedShader,
           glm::vec3{0.0f, 1.0f, 0.0f}, 90.0f, 0.0f)) {
   m_CrosshairTexture = StartLoadingTexture(
       std::filesystem::path("resources/Textures/Crosshair.png"));
+  // m_AudioSystem.AddSound("resources/my_sound.wav",
+  //                       m_Level.GetBlocks().back().Start);
 
   Settings.CameraOptions = &m_Camera->Options;
 
@@ -135,6 +137,7 @@ void Game::swap(Game &other) noexcept {
   SWAP(m_BlockEditingIndex);
   SWAP(m_CrosshairTexture);
   SWAP(Settings);
+  SWAP(m_AudioSystem);
 }
 
 void Game::Update() {
@@ -181,6 +184,7 @@ void Game::Update() {
     }
     break;
   }
+  // m_AudioSystem.SetListenerOptions(m_Camera->Position, m_Camera->Front);
 }
 
 void Game::Render() {
@@ -250,8 +254,6 @@ void Game::DrawUI(VertexArray *screenVAO) {
   screenVAO->Bind();
   glDrawArrays(GL_TRIANGLES, 0, 6);
   screenVAO->UnBind();
-
-  // TODO: draw crossair
 }
 
 void Game::SetLevel(int level) {

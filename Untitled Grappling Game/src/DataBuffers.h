@@ -111,14 +111,14 @@ struct LayoutElement {
 
   bool Normalized = true;
 
-  constexpr GLint GetSize() const {
+  constexpr GLuint GetSize() const {
     switch (Type) {
     case GL_FLOAT:
-      return sizeof(GLfloat) * Count;
+      return static_cast<unsigned int>(sizeof(GLfloat)) * Count;
     case GL_UNSIGNED_INT:
-      return sizeof(GLuint) * Count;
+      return static_cast<unsigned int>(sizeof(GLuint)) * Count;
     case GL_UNSIGNED_BYTE:
-      return sizeof(GLubyte) * Count;
+      return static_cast<unsigned int>(sizeof(GLubyte)) * Count;
     default:
       return UINT32_MAX;
     }
@@ -140,7 +140,7 @@ private:
     typedef T type;
   };
 
-  template <typename T> constexpr void Push(unsigned int count, identity<T>) {
+  template <typename T> constexpr void Push([[maybe_unused]]unsigned int count, identity<T>) {
     assert(false);
   }
 

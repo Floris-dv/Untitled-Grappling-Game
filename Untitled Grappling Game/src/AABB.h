@@ -1,6 +1,5 @@
 #pragma once
 #include "Transform.h"
-#include <assimp/aabb.h>
 
 struct Plane {
   // unit vector
@@ -46,17 +45,11 @@ struct AABB : public BoundingVolume {
   glm::vec3 extents{0.f, 0.f, 0.f};
 
   AABB(const glm::vec3 &min, const glm::vec3 &max)
-      : BoundingVolume{}, center{(max + min) * 0.5f}, extents{max.x - center.x,
-                                                              max.y - center.y,
-                                                              max.z -
-                                                                  center.z} {}
+      : BoundingVolume{}, center{(max + min) * 0.5f},
+        extents{max.x - center.x, max.y - center.y, max.z - center.z} {}
 
   AABB(const glm::vec3 &inCenter, float iI, float iJ, float iK)
       : BoundingVolume{}, center{inCenter}, extents{iI, iJ, iK} {}
-
-  AABB(const aiAABB &aabb)
-      : AABB({aabb.mMin.x, aabb.mMin.y, aabb.mMin.z},
-             {aabb.mMax.x, aabb.mMax.y, aabb.mMax.z}) {}
 
   AABB(const AABB &aabb) = default;
 
@@ -70,5 +63,4 @@ struct AABB : public BoundingVolume {
   bool isOnOrForwardPlane(const Plane &plane) const final;
   bool isOnFrustum(const Frustum &camFrustum,
                    const Transform &transform) const final;
-  ;
 };

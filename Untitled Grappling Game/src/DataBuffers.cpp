@@ -95,7 +95,7 @@ void VertexArray::AddBuffer(const VertexBuffer &VBO, const BufferLayout &layout,
   Bind();
   VBO.Bind();
 
-  GLint offset = 0;
+  GLuint offset = 0;
   for (size_t i = 0; i < layout.GetElements().size(); i++) {
     LayoutElement e = layout.GetElements()[i];
     GLuint j = layout.GetStartIndex() + (GLuint)i;

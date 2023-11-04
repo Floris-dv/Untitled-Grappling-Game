@@ -1,9 +1,6 @@
 [submodule "Untitled Grappling Game/vendor/GLFW"]
 	path = Untitled Grappling Game/vendor/GLFW
 	url = https://github.com/glfw/glfw.git
-[submodule "Untitled Grappling Game/vendor/assimp"]
-	path = Untitled Grappling Game/vendor/assimp
-	url = https://github.com/assimp/assimp.git
 [submodule "Untitled Grappling Game/vendor/ImGuizmo"]
 	path = Untitled Grappling Game/vendor/ImGuizmo
 	url = https://github.com/CedricGuillemet/ImGuizmo.git

@@ -6,7 +6,7 @@
 PostprocessingLayer::PostprocessingLayer(uint32_t screenWidth,
                                          uint32_t screenHeight,
                                          VertexArray *screenVAO)
-    : m_ScreenWidth(screenWidth), m_ScreenHeight(screenHeight), m_ScreenVAO(screenVAO) {
+    : m_ScreenVAO(screenVAO), m_ScreenWidth(screenWidth), m_ScreenHeight(screenHeight) {
   SetBloomSettings({});
   SetupBloomTextures();
 

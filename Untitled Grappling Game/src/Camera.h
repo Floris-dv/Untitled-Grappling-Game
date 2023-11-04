@@ -44,7 +44,7 @@ private:
 protected:
   bool m_CanJump = true;
 
-  const glm::vec3 m_WorldUp;
+  glm::vec3 m_WorldUp;
   glm::vec3 m_Up;    // READ-ONLY
   glm::vec3 m_Right; // READ-ONLY
 
@@ -63,7 +63,7 @@ public:
   glm::vec3 Front; // READ-ONLY
   glm::vec3 Vel;   // velocity
 
-  const Camera_Type CameraType;
+  Camera_Type CameraType;
 
   float AspectRatio;
 

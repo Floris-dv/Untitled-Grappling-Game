@@ -5,6 +5,7 @@
 struct GLFWwindow;
 class Window;
 
+// GLFW key mapping:
 enum Key {
   KEY_SPACE = 32,
   KEY_APOSTROPHE = 39, /* ' */
@@ -159,9 +160,6 @@ struct WindowProps {
               uint32_t height = 900, bool vSync = true)
       : Title(title), Width(width), Height(height), VSync(vSync) {}
 };
-
-// GLFW key mapping:
-enum Key;
 
 class Window {
 public:

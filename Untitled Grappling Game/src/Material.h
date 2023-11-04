@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MATERIAL_H
+#define MATERIAL_H
 #include "Shader.h"
 #include "Texture.h"
 #include "UtilityMacros.h"
@@ -228,3 +229,4 @@ inline EmptyMaterial::EmptyMaterial(IStream &input) {
     input >> m_Diffuse >> m_Specular;
   }
 }
+#endif

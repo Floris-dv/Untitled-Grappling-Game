@@ -1,14 +1,21 @@
 #include "pch.h"
 
+#include "Log.h"
+
 #include "Application.h"
+#include "Timer.h"
 #include "VertexData.h"
 #include <glm/gtc/integer.hpp>
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <imgui/imgui.h>
 #include <imguizmo/ImGuizmo.h>
+#include <miniaudio/miniaudio.h>
 
 void Application::Initialize() {
+  NG_TRACE("Initializing application");
+  PROFILE_FUNCTION_ONCE();
+
   m_Window.GetFunctions().WindowResizeFn =
       std::bind_front(&Application::WindowResizeCallback, this);
 
@@ -71,6 +78,7 @@ void Application::Initialize() {
     m_InstancedShader.SetFloat("height_scale", 0.1f);
   }
 
+  NG_TRACE("Initializing Game");
   m_Game = Game("Levels/Level1.dat", &m_InstancedShader, &m_NormalShader,
                 &m_TextureShader, &m_Window);
 
@@ -139,6 +147,7 @@ void Application::PostProcess() {
 }
 
 void Application::WindowResizeCallback(uint32_t width, uint32_t height) {
+  NG_TRACE("Resizing window to {} {}", width, height);
   glViewport(0, 0, (GLsizei)width, (GLsizei)height);
 
   m_Game.WindowResizeCallback(width, height);

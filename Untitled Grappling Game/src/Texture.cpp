@@ -17,7 +17,7 @@ std::mutex loadedPathsMtx;
 
 LoadingTexture::LoadingTexture(const std::filesystem::path &fname,
                                TextureType type)
-    : Path(fname), Format(0), InternalFormat(0), Type(type) {
+    : Format(0), InternalFormat(0), Path(fname), Type(type) {
   if (loadedPaths.contains(Path)) {
     Height = -1;
     Width = -1;
@@ -99,10 +99,9 @@ Texture LoadingTexture::Finish(TextureType FillInType, bool deleteAfter) {
   return loadedPaths[Path];
 }
 
-LoadingTextures::LoadingTextures(std::vector<std::string> paths)
-    : Size((unsigned int)paths.size()) {
-  Futures.reserve(Size);
-  Textures.reserve(Size);
+LoadingTextures::LoadingTextures(std::vector<std::string> paths) {
+  Futures.reserve(paths.size());
+  Textures.reserve(paths.size());
   for (std::string &path : paths) {
     Futures.push_back(std::async(
         std::launch::async,
@@ -126,17 +125,17 @@ bool LoadingTextures::Is_Finished() {
 }
 
 std::vector<Texture> LoadingTextures::GetTextures(TextureType type) {
-  if (Textures.size() == Size)
-    return Textures;
-
   for (auto &f : Futures) {
     Textures.push_back(f.get()->Finish(type));
   }
+
+  Futures.clear();
 
   return Textures;
 }
 
 Texture LoadingTextures::GenerateCubeMap() {
+  assert(Futures.size() == 6);
   Texture texture;
   texture.Type = TextureType::cubeMap;
 
@@ -157,8 +156,9 @@ Texture LoadingTextures::GenerateCubeMap() {
         continue;
       }
 
-      glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, t->Format, t->Width,
-                   t->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, t->read());
+      glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + (unsigned int)i, 0,
+                   static_cast<int>(t->Format), t->Width, t->Height, 0, GL_RGB,
+                   GL_UNSIGNED_BYTE, t->read());
 
       if (i == 0)
         texture.Path = t->Path;
@@ -168,6 +168,8 @@ Texture LoadingTextures::GenerateCubeMap() {
       NG_ERROR(e.what());
     }
   }
+
+  Futures.clear();
 
   return texture;
 }

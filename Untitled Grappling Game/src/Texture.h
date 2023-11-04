@@ -12,9 +12,9 @@ enum class TextureType {
   count
 };
 
-static constexpr const char *const names[(int)TextureType::count] = {
-    "material.diffuse", "material.specular", "material.normal",
-    "material.height", "material.cubeMap"};
+static constexpr const char *const names[static_cast<int>(TextureType::count)] =
+    {"material.diffuse", "material.specular", "material.normal",
+     "material.height", "material.cubeMap"};
 
 struct Texture {
   unsigned int ID;
@@ -40,8 +40,8 @@ struct LoadingTexture {
 
   int Width;
   int Height;
-  int Format;
-  int InternalFormat;
+  unsigned int Format;
+  unsigned int InternalFormat;
 
   std::filesystem::path Path;
   TextureType Type;
@@ -72,7 +72,6 @@ class LoadingTextures {
 private:
   std::vector<std::future<LoadingTexture *>> Futures;
   std::vector<Texture> Textures;
-  unsigned int Size;
 
 public:
   explicit LoadingTextures(std::vector<std::string> paths);
@@ -92,7 +91,7 @@ StartLoadingTexture(const std::filesystem::path &path,
 template <typename OStream>
 inline OStream &operator<<(OStream &output, Texture const &texture) {
   output << texture.Path << '\n';
-  output << (int)texture.Type << '\n';
+  output << static_cast<int>(texture.Type) << '\n';
 
   return output;
 }

@@ -1,5 +1,10 @@
 #pragma once
+#include "UtilityMacros.h"
+
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_LANGUAGE_EXTENSION
 #include <glad/glad.h>
+DISABLE_WARNING_POP
 
 class Shader {
 private:
@@ -16,19 +21,19 @@ public:
   Shader(std::string_view vertexPath, std::string_view fragmentPath,
          std::string_view geometryPath = "");
 
-  template <size_t vSize, size_t fSize>
+  template <GLsizei vSize, GLsizei fSize>
   Shader(const uint32_t vertex[vSize], const uint32_t fragment[fSize])
       : Shader(vertex, vSize, fragment, fSize) {}
 
-  Shader(const uint32_t *vertex, size_t vSize, const uint32_t *fragment,
-         size_t fSize);
+  Shader(const uint32_t *vertex, GLsizei vSize, const uint32_t *fragment,
+         GLsizei fSize);
 
   Shader(std::string_view computePath);
 
-  template <size_t cSize>
+  template <GLsizei cSize>
   Shader(const uint32_t compute[cSize]) : Shader(compute, cSize) {}
 
-  Shader(uint32_t *compute, size_t cSize);
+  Shader(uint32_t *compute, GLsizei cSize);
 
   ~Shader() { glDeleteProgram(ID); }
 
@@ -48,7 +53,7 @@ public:
 
   // utility uniform functions, just thin wrappers
   void SetBool(std::string_view name, bool value) {
-    glUniform1i(GetUniformLocation(name), (int)value);
+    glUniform1i(GetUniformLocation(name), static_cast<int>(value));
   }
   void SetInt(std::string_view name, int value) {
     glUniform1i(GetUniformLocation(name), value);

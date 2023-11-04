@@ -75,7 +75,7 @@ static GLuint GetShader(const std::string &filename, GLenum type) {
   return returnShader;
 }
 
-static GLuint GetShader(const uint32_t *shaderCode, size_t size, GLenum type) {
+static GLuint GetShader(const uint32_t *shaderCode, GLsizei size, GLenum type) {
   if (s_SPIRShaderCache.contains(shaderCode))
     return s_SPIRShaderCache[shaderCode];
 
@@ -145,8 +145,8 @@ Shader::Shader(std::string_view vertexPath, std::string_view fragmentPath,
   }
 }
 
-Shader::Shader(const uint32_t *vertex, size_t vSize, const uint32_t *fragment,
-               size_t fSize) {
+Shader::Shader(const uint32_t *vertex, GLsizei vSize, const uint32_t *fragment,
+               GLsizei fSize) {
   const GLuint VertexShader = GetShader(vertex, vSize, GL_VERTEX_SHADER);
   const GLuint FragmentShader = GetShader(fragment, fSize, GL_FRAGMENT_SHADER);
 
@@ -197,7 +197,7 @@ Shader::Shader(std::string_view computePath) {
   }
 }
 
-Shader::Shader(uint32_t *compute, size_t cSize) {
+Shader::Shader(uint32_t *compute, GLsizei cSize) {
   const GLuint ComputeShader = GetShader(compute, cSize, GL_COMPUTE_SHADER);
 
   ID = glCreateProgram();

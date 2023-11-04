@@ -14,7 +14,7 @@ EmptyMaterial::EmptyMaterial(std::vector<Texture> &&texs) noexcept
 EmptyMaterial::EmptyMaterial(
     std::vector<std::shared_future<LoadingTexture *>> &&loadingTexs) noexcept
     : m_Textures(loadingTexs.size()), m_LoadingTextures(std::move(loadingTexs)),
-      m_OpenGLPrepared(false), m_UseTextures(true) {}
+      m_UseTextures(true), m_OpenGLPrepared(false) {}
 
 EmptyMaterial::EmptyMaterial(const glm::vec3 &diff,
                              const glm::vec3 &spec) noexcept
@@ -84,7 +84,7 @@ void EmptyMaterial::Load(Shader &shader) {
 
   unsigned int diffuseNr = 0, specularNr = 0, normalNr = 0, heightNr = 0;
 
-  for (int i = 0; i < m_Textures.size(); i++) {
+  for (size_t i = 0; i < m_Textures.size(); i++) {
     std::string number;
     TextureType type = m_Textures[i].Type;
 
@@ -105,7 +105,7 @@ void EmptyMaterial::Load(Shader &shader) {
       throw "ERROR: Texture type is not defined\n";
     }
 
-    shader.SetInt((names[(int)type] + number).c_str(), i);
+    shader.SetInt((names[(int)type] + number).c_str(), (int)i);
     glBindTextureUnit(i, m_Textures[i].ID);
   }
 
