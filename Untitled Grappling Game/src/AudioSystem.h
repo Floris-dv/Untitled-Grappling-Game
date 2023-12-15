@@ -5,9 +5,10 @@ class AudioSystem {
   static constexpr uint32_t m_ListenerIndex = 0;
   std::vector<ma_sound> m_Sounds;
 
+  static constexpr bool s_UsePosition = true;
+
 public:
-  explicit AudioSystem(ma_engine_config *config); // just set this to nullptr to
-                                                  // actually construct this
+  explicit AudioSystem(ma_engine_config *config);
   void SetListenerOptions(const glm::vec3 &position,
                           const glm::vec3 &direction);
 

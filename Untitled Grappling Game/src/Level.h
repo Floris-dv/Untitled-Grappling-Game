@@ -2,7 +2,7 @@
 #include "DataBuffers.h"
 #include "GrapplingCamera.h"
 #include "Material.h"
-#include "Object.h"
+#include "Mesh.h"
 #include "UtilityMacros.h"
 #include "Window.h"
 
@@ -25,7 +25,7 @@ public:
     float elasticity = 0.1f;
     glm::quat Rotation = {1.0f, 0.0f, 0.0f, 0.0f};
 
-    inline static Object<SimpleVertex> Object;
+    inline static Mesh<SimpleVertex> Object;
   };
 
 public:
@@ -63,6 +63,8 @@ public:
   void UpdateInstanceVBO();
 
   double GetStartTime() { return m_StartTime; }
+
+  const EmptyMaterial &GetTheme() { return m_MainMaterial; }
 
 private:
   // First block: finish box, Second block (by convention): startplatform

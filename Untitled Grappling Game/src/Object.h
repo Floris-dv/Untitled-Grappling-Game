@@ -1,41 +1,28 @@
 #pragma once
-#include "DataBuffers.h"
 #include "Material.h"
-#include "Texture.h"
+#include "Mesh.h"
 #include "UtilityMacros.h"
-#include "Vertex.h"
 
-template <typename T = Vertex> struct Object {
+template <typename T = Vertex> struct Object : public Mesh<T> {
 private:
-  GLsizei m_NumVerts;
-  bool m_UseIBO = false;
-
-  VertexBuffer m_VBO;
-
-  IndexBuffer m_IBO;
-
   std::shared_ptr<Material> m_MainMaterial = nullptr;
 
-  void DoDrawCall();
-
-  void DoInstancedDrawCall(GLsizei count);
-
 public:
-  VertexArray VAO;
+  Object() {}
 
-  Object() noexcept : m_NumVerts(0), VAO(false) {}
+  explicit Object(std::shared_ptr<Material> material,
+                  const std::span<T> vertices, const BufferLayout &bufferLayout,
+                  const std::span<GLuint> indices)
+      : Mesh<T>(vertices, bufferLayout, indices),
+        m_MainMaterial(std::move(material)) {}
+
+  explicit Object(std::shared_ptr<Material> material,
+                  const std::span<T> vertices, const BufferLayout &bufferLayout)
+      : Object(material, vertices, bufferLayout, std::span<GLuint, 0>()) {}
+  void swap(Object<T> &other);
 
   Object<T> &operator=(Object<T> &&other) noexcept;
 
-  Object(std::shared_ptr<Material> material, const std::span<T> vertices,
-         const BufferLayout &bufferLayout, const std::span<GLuint> indices);
-
-  Object(std::shared_ptr<Material> material, const std::span<T> vertices,
-         const BufferLayout &bufferLayout)
-      : Object(material, vertices, bufferLayout, std::span<GLuint, 0>()) {}
-
-  Object(const Object<T> &other) =
-      delete; // apperently, this is the only thing that works on my machine
   Object<T> &operator=(const Object<T> &other) = delete;
 
   virtual ~Object() noexcept {}
@@ -44,150 +31,19 @@ public:
     Draw(modelMatrix, m_MainMaterial.get(), setMaterial);
   }
 
-  void Draw(const glm::mat4 &modelMatrix, Material *material,
-            bool setMaterial) {
-    if (setMaterial)
-      Draw(modelMatrix, (EmptyMaterial *)material, material->GetShader());
-    else
-      Draw(modelMatrix, material->GetShader());
-  }
-
-  void Draw(const glm::mat4 &modelMatrix, EmptyMaterial *material,
-            Shader *shader);
-
-  void Draw(const glm::mat4 &modelMatrix, Shader *shader);
-
   void DrawInstanced(bool setMaterial, GLsizei count) {
     DrawInstanced(m_MainMaterial.get(), setMaterial, count);
   }
 
-  void DrawInstanced(Material *material, bool setMaterial, GLsizei count) {
-    if (setMaterial)
-      DrawInstanced((EmptyMaterial *)material, material->GetShader(), count);
-    else
-      DrawInstanced(material->GetShader(), count);
-  }
-
-  void DrawInstanced(EmptyMaterial *material, Shader *shader,
-                     GLsizei count);
-
-  void DrawInstanced(Shader*shader, GLsizei count);
-
-  virtual void SetInstanceBuffer(const VertexBuffer &instanceBuffer);
-
-  inline bool IsValid() { return VAO.IsValid(); }
-
   void DoOpenGL(bool deleteAfter) { m_MainMaterial->LoadTextures(deleteAfter); }
 };
 
-static const BufferLayout instanceBufferLayout = {
-    5,
-    sizeof(glm::mat4),
-    {{GL_FLOAT, 4}, {GL_FLOAT, 4}, {GL_FLOAT, 4}, {GL_FLOAT, 4}},
-    true};
-
-template <typename T>
-inline void Object<T>::Draw(const glm::mat4 &modelMatrix,
-                            EmptyMaterial *material, Shader *shader) {
-  if (!m_NumVerts)
-    return;
-
-  material->Load(*shader);
-
-  shader->SetMat4("model", modelMatrix);
-
-  DoDrawCall();
+template <typename T> void Object<T>::swap(Object<T> &other) {
+  SWAP(m_MainMaterial);
+  std::swap((Mesh<T> &)*this, (Mesh<T> &)other);
 }
-
-template <typename T>
-inline void Object<T>::Draw(const glm::mat4 &modelMatrix, Shader *shader) {
-  if (!m_NumVerts)
-    return;
-
-  shader->Use();
-  shader->SetBool("material.useTex", false);
-  shader->SetMat4("model", modelMatrix);
-
-  DoDrawCall();
-}
-
-template <typename T>
-void Object<T>::DrawInstanced(EmptyMaterial *material, Shader *shader,
-                              GLsizei count) {
-  if (!m_NumVerts)
-    return;
-
-  material->Load(*shader);
-
-  DoInstancedDrawCall(count);
-}
-
-template <typename T>
-inline void Object<T>::DrawInstanced(Shader *shader, GLsizei count) {
-  if (!m_NumVerts)
-    return;
-
-  shader->Use();
-  shader->SetBool("material.useTex", false);
-
-  DoInstancedDrawCall(count);
-}
-
-template <typename T>
-void Object<T>::SetInstanceBuffer(const VertexBuffer &instanceBuffer) {
-  VAO.AddBuffer(instanceBuffer, instanceBufferLayout);
-}
-
-template <typename T>
-inline void Object<T>::DoInstancedDrawCall(GLsizei count) {
-  VAO.Bind();
-  if (m_UseIBO)
-    glDrawElementsInstanced(GL_TRIANGLES, m_NumVerts, GL_UNSIGNED_INT,
-                            (void *)0, count);
-  else
-    glDrawArraysInstanced(GL_TRIANGLES, 0, m_NumVerts, count);
-
-  VAO.UnBind();
-}
-
-template <typename T> inline void Object<T>::DoDrawCall() {
-  VAO.Bind();
-  if (m_UseIBO)
-    glDrawElements(GL_TRIANGLES, m_NumVerts, GL_UNSIGNED_INT, (void *)0);
-  else
-    glDrawArrays(GL_TRIANGLES, 0, m_NumVerts);
-
-  VAO.UnBind();
-}
-
 template <typename T>
 Object<T> &Object<T>::operator=(Object<T> &&other) noexcept {
-  m_VBO = std::move(other.m_VBO);
-  m_IBO = std::move(other.m_IBO);
-  VAO = std::move(other.VAO);
-
-  std::swap(m_MainMaterial, other.m_MainMaterial);
-
-  std::swap(m_NumVerts, other.m_NumVerts);
-  std::swap(m_UseIBO, other.m_UseIBO);
-
+  swap(other);
   return *this;
-}
-
-template <typename T>
-inline Object<T>::Object(std::shared_ptr<Material> material,
-                         const std::span<T> vertices,
-                         const BufferLayout &bufferLayout,
-                         const std::span<GLuint> indices)
-    : m_UseIBO(!indices.empty()), 
-      m_VBO((unsigned int)vertices.size_bytes(), vertices.data()), 
-      m_MainMaterial(std::move(material)){
-  VAO.AddBuffer(m_VBO, bufferLayout);
-
-  if (m_UseIBO) {
-    m_NumVerts = (GLsizei)indices.size();
-    m_IBO = IndexBuffer(indices.size_bytes(), indices.data());
-    VAO.AddIndexBuffer(m_IBO);
-  } else
-    m_NumVerts = (GLsizei)vertices.size();
 }

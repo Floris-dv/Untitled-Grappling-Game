@@ -4,18 +4,14 @@
 #include "Vertex.h"
 
 // Simple sphere generation, not anything fancy
-static std::pair<std::vector<MinimalVertex>, std::vector<GLuint>>
+inline std::pair<std::vector<MinimalVertex>, std::vector<GLuint>>
 CreateSphere(size_t stacks, size_t slices);
 
-static void GenerateModelMatricesInRing(const unsigned int amount,
-                                        glm::mat4 *modelMatrices,
-                                        const float radius,
-                                        const float displacement);
+inline std::pair<std::vector<MinimalVertex>, std::vector<GLuint>>
+CreateCylinder(size_t stacks, size_t slices);
 
 // Can't be constexpr because it's used by a span. Should not be modified
-inline std::array<SimpleVertex, 36> boxVertices = {{
-    // Positions				// Normals				// Texture
-    // coords
+const inline std::array<SimpleVertex, 36> boxVertices = {{
     // Front face
     {{-1.0f, -1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
     {{1.0f, -1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
@@ -66,8 +62,6 @@ inline std::array<SimpleVertex, 36> boxVertices = {{
 }};
 
 constexpr std::array<Vertex, 6> floorVertices = {{
-    // positions				// normal				// texture coords	// tangents				//
-    // bitangents
     {{-10.0f, -7.5f, -10.0f},
      {0.0f, 1.0f, 0.0f},
      {0.0f, 0.0f},
@@ -158,7 +152,7 @@ constexpr std::array<float, 120> lightData = {{
     0.9659258262890683f, // outerCutOff ( = cos(17.5 degrees)
 }};
 
-static std::pair<std::vector<MinimalVertex>, std::vector<unsigned int>>
+std::pair<std::vector<MinimalVertex>, std::vector<unsigned int>>
 CreateSphere(size_t stacks, size_t slices) {
   static constexpr float PI = glm::pi<float>();
   std::vector<glm::vec3> positions;
@@ -167,12 +161,12 @@ CreateSphere(size_t stacks, size_t slices) {
   indices.reserve((slices * stacks + slices) * 6);
 
   // loop through stacks.
-  for (size_t i = 0; i <= stacks; ++i) {
+  for (size_t i = 0; i < stacks; ++i) {
     float V = (float)i / (float)stacks;
     float phi = V * PI;
 
     // loop through the slices.
-    for (size_t j = 0; j <= slices; ++j) {
+    for (size_t j = 0; j < slices; ++j) {
       float U = (float)j / (float)slices;
       float theta = U * (PI * 2);
 
@@ -209,41 +203,37 @@ CreateSphere(size_t stacks, size_t slices) {
   return std::make_pair(vertices, indices);
 }
 
-static void GenerateModelMatricesInRing(const unsigned int amount,
-                                        glm::mat4 *modelMatrices,
-                                        const float radius,
-                                        const float displacementOffset) {
-  std::random_device rd;
-  std::mt19937 gen(rd());
+// Stacks = number of pizza slices
+// Slices = number of hockey pucks, minus one
+std::pair<std::vector<MinimalVertex>, std::vector<unsigned int>>
+CreateCylinder(size_t stacks, size_t slices) {
+  static constexpr float PI = glm::pi<float>();
 
-  std::uniform_real_distribution<float> displacement(-displacementOffset,
-                                                     displacementOffset);
-  std::uniform_real_distribution<float> scale(0.25f, 1.0f);
-  std::uniform_real_distribution<float> rotation(0.0f, 360.0f);
+  std::vector<glm::vec3> positions;
+  positions.reserve(stacks * slices);
+  std::vector<unsigned int> indices;
+  indices.reserve((slices * stacks + slices) * 6);
 
-  // transform the x and z position of the asteroid along a circle with a radius
-  // of radius
-  for (unsigned int i = 0; i < amount; i++) {
-    glm::mat4 model(1.0f);
-    // 1. translation: displace along circle with 'r' in range
-    // [-displacementOffset, displacementOffset]
-    float angle = (float)i / (float)amount * 360.0f;
+  std::vector<MinimalVertex> vertices;
+  vertices.reserve(2 * stacks * slices);
 
-    float x = glm::sin(angle) * radius + displacement(gen);
-    float y =
-        displacement(gen) * 0.4f +
-        10.0f; // keep it less of a thing, as I want it to be more like reality
-    float z = glm::cos(angle) * radius + displacement(gen);
+  // loop through stacks.
+  for (size_t i = 0; i < stacks; ++i) {
+    float V = (float)i / (float)stacks;
+    float phi = V * PI;
 
-    model = glm::translate(model, glm::vec3(x, y, z));
+    // loop through the slices.
+    for (size_t j = 0; j < slices; ++j) {
+      float U = (float)j / (float)slices;
+      float theta = U * (PI * 2);
 
-    // 2. scale randomly between 0.05 and 0.25f
-    model = glm::scale(model, glm::vec3(scale(gen)));
+      // use spherical coordinates to calculate the positions.
+      float x = cos(theta) * sin(phi);
+      float y = cos(phi);
+      float z = sin(theta) * sin(phi);
 
-    // 3. add random rotation
-    model = glm::rotate(model, rotation(gen), glm::vec3(0.4f, 0.6f, 0.8f));
-
-    // 4. add to list of matrices:
-    modelMatrices[i] = model;
+      positions.push_back({x, y, z});
+    }
   }
+  return std::make_pair(vertices, indices);
 }

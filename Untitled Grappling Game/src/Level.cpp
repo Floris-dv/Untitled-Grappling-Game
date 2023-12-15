@@ -1,4 +1,6 @@
+#include "Vertex.h"
 #include "pch.h"
+#include <span>
 #define OVERLOAD_GLM_OSTREAM 0
 #include "GrapplingCamera.h"
 #include "Level.h"
@@ -59,6 +61,7 @@ void Level::swap(Level &other) {
   SWAP(m_MainMaterial);
   SWAP(m_Matrices);
   SWAP(m_StartTime);
+  SWAP(m_Window);
 }
 
 void Level::Write(std::string_view levelFile) {
@@ -91,10 +94,10 @@ void Level::Render(Shader *shader, Shader *finishShader) {
 }
 
 void Level::RenderOneByOne(Shader *shader, Shader *finishShader) {
-  for (size_t i = 0; i < m_Matrices.size() - 1; i++)
+  for (size_t i = 1; i < m_Matrices.size(); i++)
     Block::Object.Draw(m_Matrices[i], &m_MainMaterial, shader);
 
-  Block::Object.Draw(m_Matrices.back(), &m_FinishMaterial, finishShader);
+  Block::Object.Draw(m_Matrices.front(), &m_FinishMaterial, finishShader);
 }
 
 void Level::RenderEditingMode(size_t &index, Camera *camera) {
@@ -197,7 +200,9 @@ void Level::RenderEditingMode(size_t &index, Camera *camera) {
                        nullptr, useSnap ? &snap.x : nullptr);
 
   if (ImGui::Button("Save as")) {
+    NG_INFO("Saving File to {}", m_FileName);
     m_FileName = GetSaveFileNameAllPlatforms(m_Window->GetGLFWWindow());
+    NG_INFO("Saving File to {}", m_FileName);
     Write(m_FileName);
   }
   if (!m_FileName.empty())
@@ -260,7 +265,6 @@ bool Level::UpdatePhysics(GrapplingCamera &camera) {
 }
 
 // Needs to be called when switching from RenderOneByOne() to Render()
-
 void Level::UpdateInstanceVBO() {
   glNamedBufferData(
       m_InstanceVBO.ID(),
@@ -269,16 +273,13 @@ void Level::UpdateInstanceVBO() {
 }
 
 void Level::SetupInstanceVBO() {
-  Block::Object.VAO.Bind();
-
   std::shared_ptr<Material> s(nullptr);
   m_InstanceVBO = VertexBuffer(((unsigned int)m_Matrices.size() - 1) *
                                    sizeof(m_Matrices[0]),
                                &m_Matrices[1]);
 
   if (!Block::Object.IsValid())
-    Block::Object =
-        Object<SimpleVertex>(nullptr, boxVertices, SimpleVertex::Layout);
+    Block::Object = Mesh<SimpleVertex>(boxVertices, SimpleVertex::Layout);
 
   Block::Object.SetInstanceBuffer(m_InstanceVBO);
 }

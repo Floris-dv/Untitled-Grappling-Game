@@ -5,13 +5,15 @@
 #include "Endscreen.h"
 #include "Level.h"
 #include "LevelTimer.h"
+#include "Object.h"
 #include "Shader.h"
+#include "Vertex.h"
 #include "Window.h"
 #include <optional>
 
 class Game {
 public:
-  enum class GameState { Playing, Editing, Endscreen };
+  enum class GameState { Playing, Paused, Editing, Endscreen };
 
 protected:
   // TODO: maybe make this class own the shaders
@@ -19,16 +21,14 @@ protected:
   Shader *m_NormalShader = nullptr;
   Shader *m_UIShader = nullptr;
 
-  std::optional<AudioSystem> m_AudioSystem;
+  AudioSystem m_AudioSystem;
 
   float m_CrosshairSize = 0.1f;
   std::variant<Texture, LoadingTexture::Future> m_CrosshairTexture;
   LevelTimer m_Timer;
-  GameState m_State = GameState::Playing;
-  Level m_Level;
+  GameState m_State = GameState::Paused;
 
   Window *m_Window = nullptr;
-  Endscreen m_Endscreen;
 
   VertexArray *m_ScreenVAO;
 
@@ -39,6 +39,9 @@ protected:
   UniformBuffer m_MatrixUBO;
 
   std::unique_ptr<Camera> m_Camera;
+  Level m_Level;
+  Endscreen m_Endscreen;
+  Mesh<MinimalVertex> m_Rope;
 
   int m_LevelNr = 1;
   size_t m_BlockEditingIndex = 0;
@@ -55,24 +58,21 @@ public:
     BloomSettings BloomSettings;
   } Settings;
 
-  Game() : Settings({nullptr, BloomSettings{0.8f, 0.05f, {0, 0}, 0, false}}) {}
+  // Game() : Settings({nullptr, BloomSettings{0.8f, 0.05f, {0, 0}, 0, false}})
+  // {}
 
   Game(const std::string &startLevel, Shader *instancedShader,
        Shader *normalShader, Shader *textureShader, Window *window);
 
   DELETE_COPY_CONSTRUCTOR(Game)
 
-  Game(Game &&other) noexcept { swap(other); }
+  // Game(Game &&other) noexcept : m_AudioSystem(nullptr) { swap(other); }
 
   ~Game() {
     if (!m_CrosshairTexture.valueless_by_exception() &&
         m_CrosshairTexture.index() == 0)
       glDeleteTextures(1, &std::get<Texture>(m_CrosshairTexture).ID);
   }
-
-  void swap(Game &other) noexcept;
-
-  OVERLOAD_OPERATOR_RVALUE(Game)
 
   // Gets called first, like physics
   void Update();
@@ -103,5 +103,3 @@ public:
 
   GameState GetState() { return m_State; }
 };
-
-OVERLOAD_STD_SWAP(Game)

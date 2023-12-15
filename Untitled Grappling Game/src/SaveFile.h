@@ -1,9 +1,10 @@
 #pragma once
+#include "Log.h"
 #include <GLFW/glfw3.h>
 #include <string>
 static std::string GetSaveFileNameAllPlatforms(GLFWwindow *window);
 
-#if _WIN32
+#ifdef _WIN32
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
@@ -25,6 +26,9 @@ static std::string GetSaveFileNameAllPlatforms(GLFWwindow *window) {
   OPENFILENAME ofn;
   charT szFile[260];
   HWND hwnd = glfwGetWin32Window(window);
+  if (hwnd == NULL) {
+    NG_ERROR("Couldn't get handle of GLFW window!");
+  }
   ZeroMemory(&ofn, sizeof(ofn));
   ZeroMemory(szFile, sizeof(szFile));
   ofn.lStructSize = sizeof(ofn);
@@ -41,28 +45,28 @@ static std::string GetSaveFileNameAllPlatforms(GLFWwindow *window) {
   ofn.lpstrInitialDir = NULL;
   ofn.Flags = 0;
 
-  BOOL result = GetSaveFileName(&ofn);
+  BOOL result = hwnd == NULL ? FALSE : GetSaveFileName(&ofn);
 
   if (result != TRUE)
     return std::string();
 
-    // TODO: if constexpr (std::is_same_v<charT, WCHAR>) {
-#ifdef _MSC_VER
-  char fName[260 * 4];
-  size_t size = 0;
-  errno_t res;
-  if ((res = wcstombs_s(&size, fName, 260 * 4, (const wchar_t *)szFile,
-                        260 * 2)) != 0) {
-    NG_ERROR("Converting filename: {}", res);
-  }
+  if constexpr (std::is_same_v<charT, WCHAR>) {
+    char fName[260 * 4];
+    size_t size = 0;
+    errno_t res;
+    if ((res = wcstombs_s(&size, fName, 260 * 4, (const wchar_t *)szFile,
+                          260 * 2)) != 0) {
+      NG_ERROR("Converting filename: {}", res);
+    }
 
-  return std::string(fName, size);
-#else
-  return std::basic_string<charT>(szFile);
-#endif
+    return std::string(fName, size);
+  } else
+    return std::basic_string<charT>(szFile);
 }
 #else
+
 static std::string GetSaveFileNameAllPlatforms(GLFWwindow *window) {
+  NG_WARN("Not Windows");
   return "Level.dat";
 }
 #endif

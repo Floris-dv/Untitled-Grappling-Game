@@ -79,7 +79,8 @@ void Application::Initialize() {
   }
 
   NG_TRACE("Initializing Game");
-  m_Game = Game("Levels/Level1.dat", &m_InstancedShader, &m_NormalShader,
+
+  std::construct_at(&m_Game, "Levels/Level1.dat", &m_InstancedShader, &m_NormalShader,
                 &m_TextureShader, &m_Window);
 
   m_Game.InitializeCallbacks();

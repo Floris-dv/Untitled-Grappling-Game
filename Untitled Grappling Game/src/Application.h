@@ -27,7 +27,9 @@ private:
 
   PostprocessingLayer m_PostprocessingLayer;
 
-  Game m_Game;
+  union {
+    Game m_Game;
+  };
 
   Window m_Window;
 

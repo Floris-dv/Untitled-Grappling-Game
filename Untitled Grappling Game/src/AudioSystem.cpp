@@ -14,6 +14,8 @@ AudioSystem::AudioSystem(ma_engine_config *config) {
 
 void AudioSystem::SetListenerOptions(const glm::vec3 &position,
                                      const glm::vec3 &direction) {
+  if (!s_UsePosition)
+    return;
   ma_engine_listener_set_position(&m_Engine, m_ListenerIndex, position.x,
                                   position.y, position.z);
   ma_engine_listener_set_direction(&m_Engine, m_ListenerIndex, direction.x,
@@ -32,7 +34,8 @@ void AudioSystem::AddSound(std::string_view fileName,
     throw "Failed to initialize sound";
   }
 
-  ma_sound_set_position(&m_Sounds.back(), position.x, position.y, position.z);
+  if (s_UsePosition)
+    ma_sound_set_position(&m_Sounds.back(), position.x, position.y, position.z);
 
   ma_sound_start(&m_Sounds.back());
 }

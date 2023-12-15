@@ -44,7 +44,7 @@ public:
 
   void SetColors(const glm::vec3 &diff, const glm::vec3 &spec);
   void LoadTextures(bool deleteData);
-  void Load(Shader &shader);
+  void Load(Shader &shader) const;
 
   template <typename OStream> void Serialize(OStream &output);
 
@@ -81,10 +81,6 @@ public:
       : EmptyMaterial(diff, spec), m_Shader(std::move(shader)) {}
 
   Material(std::shared_ptr<Shader> shader, EmptyMaterial &&material)
-      : EmptyMaterial(std::forward<EmptyMaterial>(material)),
-        m_Shader(std::move(shader)) {}
-
-  Material(std::shared_ptr<Shader> &&shader, EmptyMaterial &&material)
       : EmptyMaterial(std::forward<EmptyMaterial>(material)),
         m_Shader(std::move(shader)) {}
 

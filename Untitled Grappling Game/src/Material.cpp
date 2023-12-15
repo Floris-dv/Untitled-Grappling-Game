@@ -70,7 +70,7 @@ void EmptyMaterial::LoadTextures(bool deleteData) {
     m_LoadingTextures.clear();
 }
 
-void EmptyMaterial::Load(Shader &shader) {
+void EmptyMaterial::Load(Shader &shader) const {
   shader.Use();
   shader.SetBool("material.diffspecTex", m_UseTextures);
 
@@ -106,7 +106,7 @@ void EmptyMaterial::Load(Shader &shader) {
     }
 
     shader.SetInt((names[(int)type] + number).c_str(), (int)i);
-    glBindTextureUnit(i, m_Textures[i].ID);
+    glBindTextureUnit(static_cast<GLuint>(i), m_Textures[i].ID);
   }
 
   shader.SetBool("Material.normalMapping", (bool)normalNr);

@@ -102,7 +102,7 @@ void VertexArray::AddBuffer(const VertexBuffer &VBO, const BufferLayout &layout,
     glEnableVertexArrayAttrib(m_ID, j);
     glVertexArrayAttribBinding(m_ID, j, VBIndex);
     glVertexArrayAttribFormat(
-        m_ID, j, e.Count, e.Type,
+        m_ID, j, static_cast<int>(e.Count), e.Type,
         e.Normalized ? (GLboolean)GL_TRUE : (GLboolean)GL_FALSE, offset);
 
     offset += e.GetSize();
