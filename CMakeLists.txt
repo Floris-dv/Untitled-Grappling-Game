@@ -9,7 +9,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(VENDOR "${CMAKE_CURRENT_SOURCE_DIR}/Untitled Grappling Game/vendor")
+set(SRC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(VENDOR "${CMAKE_CURRENT_SOURCE_DIR}/vendor")
 
 find_package( OpenGL REQUIRED )
 # find_package( glslangValidator REQUIRED )
@@ -19,19 +20,20 @@ include_directories(
 	${VENDOR}/GLFW/include
 	${VENDOR}/imgui
 	${VENDOR}/glm
-	"${CMAKE_CURRENT_SOURCE_DIR}/Untitled Grappling Game/src"
+	${SRC}
 	${VENDOR}
 	${OPENGL_INCLUDE_DIRS}
 )
 add_subdirectory(${VENDOR})
 
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Untitled Grappling Game/src")
+add_subdirectory(${SRC})
 
 add_executable(App)
 
-target_sources(App PRIVATE ${SOURCE_FILES} ${VENDOR}/ImGuiBuild.cpp ${VENDOR}/spdlogBuild.cpp ${VENDOR}/Vendor.cpp)
+# Source files last because the Vendor builds take longest (want them to start earliest with parallel builds) 
+target_sources(App PRIVATE ${VENDOR}/ImGuiBuild.cpp ${VENDOR}/spdlogBuild.cpp ${VENDOR}/Vendor.cpp ${SOURCE_FILES})
 
-target_precompile_headers(App PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Untitled Grappling Game/src/pch.h")
+target_precompile_headers(App PRIVATE "${SRC}/pch.h")
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT App)
 
@@ -52,7 +54,6 @@ else()
 else()
     target_link_libraries(App -static-libgcc -static-libstdc++)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -Wall -Wextra -Wpedantic -Wconversion")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-language-extension-token")
 endif()
 
 if (WIN32)
@@ -62,8 +63,8 @@ endif()
 target_link_libraries(App glfw glm) 
 target_compile_definitions(App PRIVATE SPDLOG_COMPILED_LIB)
 
-file(COPY "Untitled Grappling Game/resources" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY "resources" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-file(COPY "Untitled Grappling Game/src/Shaders" DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/src)
+file(COPY "src/Shaders" DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/src)
 
-file(COPY "Untitled Grappling Game/Levels" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY "Levels" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

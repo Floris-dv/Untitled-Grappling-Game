@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Log.h"
-
 struct GLFWwindow;
 class Window;
 

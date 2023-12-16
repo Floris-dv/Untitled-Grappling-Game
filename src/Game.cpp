@@ -4,6 +4,7 @@
 #include "Endscreen.h"
 #include "Game.h"
 #include "Levels.h"
+#include "Log.h"
 #include "VertexData.h"
 #include "Window.h"
 

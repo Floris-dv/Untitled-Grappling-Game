@@ -1,6 +1,6 @@
 #pragma once
-#include "Shader.h"
 
+#include "Shader.h"
 #include "UtilityMacros.h"
 
 class VertexBuffer {
@@ -140,7 +140,8 @@ private:
     typedef T type;
   };
 
-  template <typename T> constexpr void Push([[maybe_unused]]unsigned int count, identity<T>) {
+  template <typename T>
+  constexpr void Push([[maybe_unused]] unsigned int count, identity<T>) {
     assert(false);
   }
 

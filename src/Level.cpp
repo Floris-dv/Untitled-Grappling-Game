@@ -1,17 +1,17 @@
-#include "Vertex.h"
 #include "pch.h"
-#include <span>
+
 #define OVERLOAD_GLM_OSTREAM 0
 #include "GrapplingCamera.h"
 #include "Level.h"
 #include "Log.h"
 #include "SaveFile.h"
 #include "UtilityMacros.h"
+#include "Vertex.h"
 #include "VertexData.h"
 #include "Window.h"
 #include "imgui/imgui.h"
+#include <ImGuizmo/ImGuizmo.h>
 #include <glm/gtx/norm.hpp>
-#include <imguizmo/ImGuizmo.h>
 
 template <typename OStream>
 inline OStream &operator<<(OStream &output, Level::Block const &input) {

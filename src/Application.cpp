@@ -5,11 +5,11 @@
 #include "Application.h"
 #include "Timer.h"
 #include "VertexData.h"
+#include <ImGuizmo/ImGuizmo.h>
 #include <glm/gtc/integer.hpp>
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <imgui/imgui.h>
-#include <imguizmo/ImGuizmo.h>
 #include <miniaudio/miniaudio.h>
 
 void Application::Initialize() {
@@ -80,8 +80,8 @@ void Application::Initialize() {
 
   NG_TRACE("Initializing Game");
 
-  std::construct_at(&m_Game, "Levels/Level1.dat", &m_InstancedShader, &m_NormalShader,
-                &m_TextureShader, &m_Window);
+  std::construct_at(&m_Game, "Levels/Level1.dat", &m_InstancedShader,
+                    &m_NormalShader, &m_TextureShader, &m_Window);
 
   m_Game.InitializeCallbacks();
 }

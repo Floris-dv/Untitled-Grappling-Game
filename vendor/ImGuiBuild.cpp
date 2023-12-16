@@ -1,4 +1,5 @@
 #include "pch.h"
+
 #include "UtilityMacros.h"
 
 DISABLE_ALL_WARNINGS
@@ -15,11 +16,11 @@ DISABLE_ALL_WARNINGS
 #include "imgui/backends/imgui_impl_glfw.cpp"
 
 // ImGuizmo
-#include "imguizmo/ImGuizmo.cpp"
+#include "ImGuizmo/ImGuizmo.cpp"
 
-#include "imguizmo/GraphEditor.cpp"
-#include "imguizmo/ImCurveEdit.cpp"
-#include "imguizmo/ImGradient.cpp"
-#include "imguizmo/ImSequencer.cpp"
+#include "ImGuizmo/GraphEditor.cpp"
+#include "ImGuizmo/ImCurveEdit.cpp"
+#include "ImGuizmo/ImGradient.cpp"
+#include "ImGuizmo/ImSequencer.cpp"
 
 DISABLE_WARNING_POP
