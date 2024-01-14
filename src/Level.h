@@ -3,6 +3,7 @@
 #include "GrapplingCamera.h"
 #include "Material.h"
 #include "Mesh.h"
+#include "RigidBody.h"
 #include "UtilityMacros.h"
 #include "Window.h"
 
@@ -20,12 +21,9 @@
 class Level {
 public:
   struct Block {
-    glm::vec3 Start = glm::vec3{0.0f};
-    glm::vec3 End = glm::vec3{0.0f};
-    float elasticity = 0.1f;
+    glm::vec3 Center = glm::vec3{0.0f};
+    glm::vec3 Halfsize = glm::vec3{0.5f};
     glm::quat Rotation = {1.0f, 0.0f, 0.0f, 0.0f};
-
-    inline static Mesh<SimpleVertex> Object;
   };
 
 public:
@@ -69,7 +67,10 @@ public:
 private:
   // First block: finish box, Second block (by convention): startplatform
   std::vector<Block> m_Blocks;
+  std::vector<BoxCollider> m_BoxColliders;
   std::vector<glm::mat4> m_Matrices;
+
+  inline static Mesh<MinimalVertex> s_BlockMesh;
 
   EmptyMaterial m_MainMaterial;
   EmptyMaterial m_FinishMaterial;
@@ -86,7 +87,7 @@ private:
 
   Window *m_Window;
 
-  static constexpr uint32_t VERSION_NR = VERSION(0, 0, 1);
+  static constexpr uint32_t VERSION_NR = VERSION(0, 0, 2);
 
   // Uses m_Matrices to setup m_InstanceVBO and Block::Object
   void SetupInstanceVBO();

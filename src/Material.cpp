@@ -105,11 +105,12 @@ void EmptyMaterial::Load(Shader &shader) const {
       throw "ERROR: Texture type is not defined\n";
     }
 
-    shader.SetInt((names[(int)type] + number).c_str(), (int)i);
+    shader.SetInt((names[static_cast<int>(type)] + number).c_str(),
+                  static_cast<int>(i));
     glBindTextureUnit(static_cast<GLuint>(i), m_Textures[i].ID);
   }
 
-  shader.SetBool("Material.normalMapping", (bool)normalNr);
+  shader.SetBool("Material.normalMapping", static_cast<bool>(normalNr));
 }
 
 EmptyMaterial::~EmptyMaterial() noexcept {

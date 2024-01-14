@@ -1,12 +1,12 @@
 #include "pch.h"
 
 #include "PostprocessingLayer.h"
-#include <glm/gtc/integer.hpp>
 
 PostprocessingLayer::PostprocessingLayer(uint32_t screenWidth,
                                          uint32_t screenHeight,
                                          VertexArray *screenVAO)
-    : m_ScreenVAO(screenVAO), m_ScreenWidth(screenWidth), m_ScreenHeight(screenHeight) {
+    : m_ScreenVAO(screenVAO), m_ScreenWidth(screenWidth),
+      m_ScreenHeight(screenHeight) {
   SetBloomSettings({});
   SetupBloomTextures();
 
@@ -65,7 +65,7 @@ void PostprocessingLayer::SetBloomSettings(const BloomSettings &settings) {
   // Make Bloom Texture Size a multiple of 16
   m_BloomSettings.TexSize += glm::ivec2(16) - (m_BloomSettings.TexSize % 16);
   m_BloomSettings.NrMips =
-      (int)glm::log2(glm::min(m_ScreenWidth, m_ScreenHeight)) -
+      static_cast<int>(glm::log2(glm::min(m_ScreenWidth, m_ScreenHeight))) -
       4; // don't want mips of like 1x1
 }
 

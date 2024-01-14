@@ -14,7 +14,7 @@ static GLuint s_UniformBufferBoundID = 0;
 // IndexBuffer:
 IndexBuffer::IndexBuffer(size_t size, const void *data) {
   glCreateBuffers(1, &m_ID);
-  glNamedBufferData(m_ID, (GLsizeiptr)size, data, GL_STATIC_DRAW);
+  glNamedBufferData(m_ID, static_cast<GLsizeiptr>(size), data, GL_STATIC_DRAW);
 }
 
 void IndexBuffer::Bind() const {
@@ -98,17 +98,18 @@ void VertexArray::AddBuffer(const VertexBuffer &VBO, const BufferLayout &layout,
   GLuint offset = 0;
   for (size_t i = 0; i < layout.GetElements().size(); i++) {
     LayoutElement e = layout.GetElements()[i];
-    GLuint j = layout.GetStartIndex() + (GLuint)i;
+    GLuint j = layout.GetStartIndex() + static_cast<GLuint>(i);
     glEnableVertexArrayAttrib(m_ID, j);
     glVertexArrayAttribBinding(m_ID, j, VBIndex);
-    glVertexArrayAttribFormat(
-        m_ID, j, static_cast<int>(e.Count), e.Type,
-        e.Normalized ? (GLboolean)GL_TRUE : (GLboolean)GL_FALSE, offset);
+    glVertexArrayAttribFormat(m_ID, j, static_cast<int>(e.Count), e.Type,
+                              e.Normalized ? static_cast<GLboolean>(GL_TRUE)
+                                           : static_cast<GLboolean>(GL_FALSE),
+                              offset);
 
     offset += e.GetSize();
   }
   glVertexArrayVertexBuffer(m_ID, VBIndex, VBO.ID(), 0,
-                            (GLsizei)layout.GetStride());
+                            static_cast<GLsizei>(layout.GetStride()));
 
   if (layout.GetInstanced())
     glVertexArrayBindingDivisor(m_ID, VBIndex, 1);
@@ -122,7 +123,7 @@ UniformBuffer::UniformBuffer(size_t size, const std::string &name,
                              const void *data)
     : m_Name(name) {
   glCreateBuffers(1, &m_ID);
-  glNamedBufferData(m_ID, (GLsizeiptr)size, data, GL_STATIC_DRAW);
+  glNamedBufferData(m_ID, static_cast<GLsizeiptr>(size), data, GL_STATIC_DRAW);
 
   Bind();
   glBindBufferBase(GL_UNIFORM_BUFFER, s_MaxBlock, m_ID);
@@ -136,7 +137,8 @@ void UniformBuffer::SetBlock(Shader &shader) {
 
 void UniformBuffer::SetData(size_t offset, size_t size, const void *data) {
   Bind();
-  glBufferSubData(GL_UNIFORM_BUFFER, (GLintptr)offset, (GLsizeiptr)size, data);
+  glBufferSubData(GL_UNIFORM_BUFFER, static_cast<GLintptr>(offset),
+                  static_cast<GLsizeiptr>(size), data);
 }
 
 void UniformBuffer::Bind() const {

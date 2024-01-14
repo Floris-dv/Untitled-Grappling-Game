@@ -7,6 +7,7 @@ class GrapplingCamera : public Camera {
 private:
   float m_AirResistance;
   float m_JumpHeight;
+  float m_CoyoteTimer = 0.0f;
 
   // Grappling hook parameters
   glm::vec3 m_GrapplingPoint{0.0f};
@@ -29,7 +30,10 @@ public:
   GrapplingCamera &operator=(GrapplingCamera &&other) = default;
   GrapplingCamera &operator=(const GrapplingCamera &other) = default;
 
-  bool m_CanJump = true;
+  bool IsOnGround = true;
+  bool IsJumping = false;
+  static constexpr float MaxStandSlope = 45.0f;
+  static constexpr float CoyoteTime = 0.25f;
 
 #define PHYSICSOFFSET 0.5f
   glm::vec3 PhysicsPosition; // Is PHYSICSOFFSET units below Position

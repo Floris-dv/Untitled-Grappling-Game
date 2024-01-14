@@ -1,14 +1,18 @@
 #pragma once
-#pragma warning(push, 0)
-#include <imgui/imgui.h>
-#pragma warning(pop)
 
+#if ENABLE_LOGGING
 #include "Log.h"
-
-#include "Settings.h"
+#include "UtilityMacros.h"
 #include <DebugBreak.h>
+#include <imgui/imgui.h>
 
-#if !DIST
+inline float GetTimeDifferenceMs(std::chrono::steady_clock::time_point from) {
+  const auto currentTime = std::chrono::steady_clock::now();
+  auto timeDifference =
+      std::chrono::duration_cast<std::chrono::microseconds>(currentTime - from);
+  return static_cast<float>(timeDifference.count()) / 1000.0f;
+}
+
 class Timer {
   bool m_Deleted = false;
 
@@ -32,9 +36,10 @@ public:
       return;
 
     NG_TRACE("{} took {:.1f} ms", Name,
-             (float)std::chrono::duration_cast<std::chrono::microseconds>(
-                 std::chrono::steady_clock::now() - Begin)
-                     .count() /
+             static_cast<float>(
+                 std::chrono::duration_cast<std::chrono::microseconds>(
+                     std::chrono::steady_clock::now() - Begin)
+                     .count()) /
                  1000.0f);
     m_Deleted = true;
   }
@@ -63,9 +68,10 @@ public:
       return;
 
     ImGui::Text("%s took %.2f ms", Name.c_str(),
-                (float)std::chrono::duration_cast<std::chrono::microseconds>(
-                    std::chrono::steady_clock::now() - Begin)
-                        .count() /
+                static_cast<float>(
+                    std::chrono::duration_cast<std::chrono::microseconds>(
+                        std::chrono::steady_clock::now() - Begin)
+                        .count()) /
                     1000.0f);
     m_Deleted = true;
   }
@@ -140,9 +146,30 @@ constexpr ChangeResult<N> CleanupOutputString(const char (&expr)[N],
       CleanupOutputString(name, "__cdecl ", "void ");                          \
   Timer t##line(fixedName##line.Data)
 #define PROFILE_SCOPE_ONCE(name) _TIMER_SCOPE(name, __LINE__)
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_DEPRECATION
 #define PROFILE_FUNCTION_ONCE() PROFILE_SCOPE_ONCE(FUNC_SIG)
+DISABLE_WARNING_POP
 #else
+// Make existing code work, will (hopefully) get optimized away by the compiler
+struct Timer {
+  static constexpr std::string Name = "";
+  static constexpr std::chrono::steady_clock::time_point Begin =
+      std::chrono::steady_clock::time_point::max();
+
+  Timer([[maybe_unused]] const std::string &name) {}
+  void Reset() {}
+};
+struct Profiler {
+  static constexpr std::string Name = "";
+  static constexpr std::chrono::steady_clock::time_point Begin =
+      std::chrono::steady_clock::time_point::max();
+
+  Profiler([[maybe_unused]] const std::string &name) {}
+  void Reset() {}
+};
 #define PROFILE_SCOPE_MAINLOOP(name)
 #define PROFILE_SCOPE_ONCE(name)
-#define PROFILE_FUNCTION_ONCE(name)
+#define PROFILE_SCOPE_ONCE(name)
+#define PROFILE_FUNCTION_ONCE()
 #endif

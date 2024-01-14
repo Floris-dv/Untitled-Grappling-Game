@@ -252,7 +252,7 @@ void main()
         normal = normalize(fs_in.TBN * normal);
     }
     else {
-        normal = fs_in.Normal;
+        normal = normalize(fs_in.Normal);
     }
 
     if (material.diffspecTex) {

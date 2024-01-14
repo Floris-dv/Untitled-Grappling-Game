@@ -8,6 +8,7 @@ class Camera {
 public:
   // camera options
   struct CameraOptions {
+    glm::vec3 Size;
     float MovementSpeed;
     float MouseSensitivity;
     float Resistance = 100.0f;
@@ -29,6 +30,7 @@ public:
   enum Camera_Type { CAMERA_TYPE_GRAPPLING = 1, CAMERA_TYPE_EDITING = 2 };
 
 private:
+  glm::mat4 m_ModelMatrix{1.0f};
   glm::mat4 m_ProjMatrix{1.0f};
   glm::mat4 m_ViewMatrix{1.0f};
   glm::mat4 m_VPMatrix{1.0f};
@@ -68,6 +70,8 @@ public:
   float AspectRatio;
 
   glm::vec2 *GetEulerAngles() { return (glm::vec2 *)&m_Yaw; }
+
+  const glm::mat4 &GetModelMatrix(); // Model of the player character
 
   // returns the view matrix calculated using Euler Angles and the LookAt Matrix
   const glm::mat4 &GetViewMatrix();

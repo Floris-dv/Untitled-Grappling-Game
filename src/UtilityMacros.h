@@ -1,7 +1,6 @@
 #pragma once
 
 // Utility macros
-
 #define SWAP(name) std::swap(name, other.name)
 
 #define MOVE_CONSTRUCT(name) name(std::move(other.name))
@@ -23,6 +22,7 @@
   classname(const classname &other) = delete;                                  \
   classname &operator=(const classname &other) = delete;
 
+// Disabling warning macros
 #if defined(__GNUC__) || defined(__clang__)
 #define DO_PRAGMA(X) _Pragma(#X);
 #define DISABLE_WARNING_PUSH DO_PRAGMA(GCC diagnostic push)

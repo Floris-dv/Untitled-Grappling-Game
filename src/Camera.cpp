@@ -17,6 +17,9 @@ void Camera::GenerateEverything() {
                                   Options.ZNear, Options.ZFar);
   m_VPMatrix = m_ProjMatrix * m_ViewMatrix;
 
+  m_ModelMatrix = glm::translate(glm::mat4{1.0f}, Position) *
+                  glm::scale(glm::mat4{1.0f}, Options.Size);
+
   const float halfVSide = Options.ZFar * tanf(glm::radians(Options.FovY) * .5f);
   const float halfHSide = halfVSide * AspectRatio;
   const glm::vec3 frontMultFar = Options.ZFar * Front;
@@ -34,6 +37,12 @@ void Camera::GenerateEverything() {
                        glm::cross(frontMultFar + m_Up * halfVSide, m_Right)};
 
   m_IsDirty = false;
+}
+
+const glm::mat4 &Camera::GetModelMatrix() {
+  if (m_IsDirty)
+    GenerateEverything();
+  return m_ModelMatrix;
 }
 
 const glm::mat4 &Camera::GetViewMatrix() {

@@ -10,16 +10,18 @@ AudioSystem::AudioSystem(ma_engine_config *config) {
     NG_CRITICAL("Failed to initialize audio system");
     throw "Failed to initialize audio system!";
   }
+  ma_engine_listener_set_world_up(&m_Engine, m_ListenerIndex, 0, 1, 0);
 }
 
 void AudioSystem::SetListenerOptions(const glm::vec3 &position,
+                                     const glm::vec3 &velocity,
                                      const glm::vec3 &direction) {
-  if (!s_UsePosition)
-    return;
   ma_engine_listener_set_position(&m_Engine, m_ListenerIndex, position.x,
                                   position.y, position.z);
   ma_engine_listener_set_direction(&m_Engine, m_ListenerIndex, direction.x,
                                    direction.y, direction.z);
+  ma_engine_listener_set_velocity(&m_Engine, m_ListenerIndex, velocity.x,
+                                  velocity.y, velocity.z);
 }
 
 void AudioSystem::AddSound(std::string_view fileName,
@@ -34,10 +36,13 @@ void AudioSystem::AddSound(std::string_view fileName,
     throw "Failed to initialize sound";
   }
 
-  if (s_UsePosition)
-    ma_sound_set_position(&m_Sounds.back(), position.x, position.y, position.z);
+  ma_sound_set_position(&m_Sounds.back(), position.x, position.y, position.z);
 
   ma_sound_start(&m_Sounds.back());
+}
+
+void AudioSystem::SetVolume(float volume) {
+  ma_engine_set_volume(&m_Engine, volume);
 }
 
 AudioSystem::~AudioSystem() {

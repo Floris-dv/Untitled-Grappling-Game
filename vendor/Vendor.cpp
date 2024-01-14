@@ -1,10 +1,10 @@
-#include "pch.h"
 #include "UtilityMacros.h"
+#include "pch.h"
 
 DISABLE_ALL_WARNINGS
 // stb_image
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include <stb_image.h>
 
 // glad
 #include "glad/glad.c"

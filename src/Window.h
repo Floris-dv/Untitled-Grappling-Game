@@ -168,7 +168,7 @@ public:
   uint32_t GetHeight() const { return m_Props.Height; }
 
   float GetAspectRatio() const {
-    return (float)GetWidth() / (float)GetHeight();
+    return static_cast<float>(GetWidth()) / static_cast<float>(GetHeight());
   }
 
   WindowFunctions &GetFunctions() { return m_Props.Functions; }

@@ -1,13 +1,11 @@
 #include "pch.h"
 
+#include "Log.h"
 #include "Texture.h"
 #include "Timer.h"
-
-#include <glad/glad.h>
-
-#include <stb_image.h>
-
 #include <DebugBreak.h>
+#include <glad/glad.h>
+#include <stb_image.h>
 
 using namespace std::literals::chrono_literals;
 
@@ -156,15 +154,17 @@ Texture LoadingTextures::GenerateCubeMap() {
         continue;
       }
 
-      glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + (unsigned int)i, 0,
-                   static_cast<int>(t->Format), t->Width, t->Height, 0, GL_RGB,
-                   GL_UNSIGNED_BYTE, t->read());
+      glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X +
+                       static_cast<unsigned int>(i),
+                   0, static_cast<int>(t->Format), t->Width, t->Height, 0,
+                   GL_RGB, GL_UNSIGNED_BYTE, t->read());
 
       if (i == 0)
         texture.Path = t->Path;
 
       delete t; // the deletor calls stbi_image_free
-    } catch (const std::exception &e) {
+    } catch ([[maybe_unused]] const std::exception
+                 &e) { // unused in case of Release build
       NG_ERROR(e.what());
     }
   }
@@ -180,19 +180,18 @@ StartLoadingTexture(const std::filesystem::path &path, TextureType type) {
   // exist anymore'
   return std::async(
       std::launch::async,
-      [](const std::filesystem::path &path, TextureType type) {
+      [](const std::filesystem::path &path,
+         TextureType type) -> LoadingTexture * {
         // if it's not heap allocated, LoadingTexture will delete it's data, and
         // then it's useless
         try {
           LoadingTexture *t = new LoadingTexture(path, type);
           return t;
-        } catch (const std::string &e) {
-          NG_ERROR("{}", e);
-        } catch (const std::exception &e) {
-          NG_ERROR("{}", e.what());
         }
-        return (
-            LoadingTexture *)nullptr; // To help the type deducing of std::async
+        NG_CATCH_ALL()
+
+        return nullptr;
+        // To help the type deducing of std::async
       },
       path, type);
 }

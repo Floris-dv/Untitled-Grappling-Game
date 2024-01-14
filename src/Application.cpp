@@ -1,16 +1,16 @@
 #include "pch.h"
 
-#include "Log.h"
-
 #include "Application.h"
+#include "Log.h"
 #include "Timer.h"
 #include "VertexData.h"
-#include <ImGuizmo/ImGuizmo.h>
 #include <glm/gtc/integer.hpp>
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <imgui/imgui.h>
 #include <miniaudio/miniaudio.h>
+
+#include <ImGuizmo/ImGuizmo.h>
 
 void Application::Initialize() {
   NG_TRACE("Initializing application");
@@ -81,7 +81,8 @@ void Application::Initialize() {
   NG_TRACE("Initializing Game");
 
   std::construct_at(&m_Game, "Levels/Level1.dat", &m_InstancedShader,
-                    &m_NormalShader, &m_TextureShader, &m_Window);
+                    &m_NormalShader, &m_TextureShader, &m_ScreenVAO, &m_Window);
+  m_Game.SetOptions({m_BloomSettings});
 
   m_Game.InitializeCallbacks();
 }
@@ -172,8 +173,8 @@ void Application::Mainloop() {
     m_Game.Update();
     m_Game.Render();
     m_Game.Finalize();
-    PostProcess();
-    m_Game.DrawUI(&m_ScreenVAO);
+    m_Game.Postprocess(m_MainTexture);
+    m_Game.DrawUI();
     EndFrame();
   }
 }

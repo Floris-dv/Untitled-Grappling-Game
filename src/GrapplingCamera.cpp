@@ -9,10 +9,8 @@ GrapplingCamera::GrapplingCamera(float airResistance, float jumpHeight,
                                  float pitch)
     : Camera(CAMERA_TYPE_GRAPPLING, options, aspectRatio, position, up, yaw,
              pitch),
-      m_AirResistance(airResistance),
-      m_JumpHeight(jumpHeight), PhysicsPosition{position.x,
-                                                position.y - PHYSICSOFFSET,
-                                                position.z} {}
+      m_AirResistance(airResistance), m_JumpHeight(jumpHeight),
+      PhysicsPosition{position.x, position.y - PHYSICSOFFSET, position.z} {}
 
 void GrapplingCamera::UpdatePosition(float deltaTime) {
   if (IsGrappling()) {
@@ -53,19 +51,27 @@ void GrapplingCamera::Release() {
 
 void GrapplingCamera::ProcessKeyboard(Camera_Movement direction,
                                       float deltaTime) {
+  if (IsOnGround)
+    m_CoyoteTimer = 0.0f;
+  else
+    m_CoyoteTimer += deltaTime;
+  bool canJump = m_CoyoteTimer < CoyoteTime && !IsJumping;
   Camera::ProcessKeyboard(direction, deltaTime);
-  ImGui::Checkbox("Can jump", &m_CanJump);
+  ImGui::Checkbox("Can jump", &canJump);
   ImGui::DragFloat3("Pos", glm::value_ptr(Position));
+  ImGui::DragFloat2("Front", glm::value_ptr(*GetEulerAngles()));
   ImGui::DragFloat3("Vel", glm::value_ptr(Vel));
-  if (direction & MOVEMENT_UP && m_CanJump) {
+  if (direction & MOVEMENT_UP && canJump) {
     Vel += m_WorldUp * m_JumpHeight;
-    m_CanJump = false;
+    IsOnGround = false;
+    IsJumping = true;
   }
 }
 
 void GrapplingCamera::Reset() {
   Camera::Reset();
   Release();
+  IsOnGround = true;
 }
 
 glm::vec3 GrapplingCamera::CalculateRopeForce() {

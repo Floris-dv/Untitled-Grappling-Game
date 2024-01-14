@@ -1,3 +1,4 @@
+#include "DebugBreak.h"
 #include "UtilityMacros.h"
 #include "pch.h"
 #ifdef _WIN32
@@ -21,11 +22,13 @@ DISABLE_WARNING_POP
 #include "Log.h"
 #include "Timer.h"
 
+#if ENABLE_LOGGING
 static void APIENTRY debug_message_callback(GLenum source, GLenum type,
                                             GLuint id, GLenum severity,
                                             GLsizei length,
                                             const GLchar *message,
                                             const void *userParam);
+#endif
 
 void Window::Init(const WindowProps &props) {
   PROFILE_FUNCTION_ONCE();
@@ -39,7 +42,7 @@ void Window::Init(const WindowProps &props) {
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_DEPTH_BITS, 32);
 
-#if USE_DEBUG_MESSAGE_CALLBACK
+#if ENABLE_DEBUG_MESSAGE_CALLBACK
   glfwSetErrorCallback([](int error, const char *description) {
     NG_ERROR("GLFW Error ({0}): {1}", error, description);
   });
@@ -77,7 +80,8 @@ void Window::Init(const WindowProps &props) {
       m_Window, [](GLFWwindow *window, double xPos, double yPos) {
         WindowProps &data = *(WindowProps *)glfwGetWindowUserPointer(window);
 
-        data.Functions.CursorPosFn((float)xPos, (float)yPos);
+        data.Functions.CursorPosFn(static_cast<float>(xPos),
+                                   static_cast<float>(yPos));
       });
 
   glfwSetKeyCallback(m_Window, [](GLFWwindow *window, int key, int scanCode,
@@ -117,7 +121,8 @@ void Window::Init(const WindowProps &props) {
       m_Window, [](GLFWwindow *window, double xOffset, double yOffset) {
         WindowProps &data = *(WindowProps *)glfwGetWindowUserPointer(window);
 
-        data.Functions.ScrollFn((float)xOffset, (float)yOffset);
+        data.Functions.ScrollFn(static_cast<float>(xOffset),
+                                static_cast<float>(yOffset));
       });
 
   glfwSetFramebufferSizeCallback(
@@ -128,13 +133,15 @@ void Window::Init(const WindowProps &props) {
           glfwGetFramebufferSize(window, &width, &height);
           glfwWaitEvents();
         }
-        uint32_t uWidth = (uint32_t)width, uHeight = (uint32_t)height;
+        uint32_t uWidth = static_cast<uint32_t>(width),
+                 uHeight = static_cast<uint32_t>(height);
 
         if (isMinimized)
           return; // The new call to this callback will fix it: don't want a
                   // double overwrite
 
-        WindowProps &data = *(WindowProps *)glfwGetWindowUserPointer(window);
+        WindowProps &data =
+            *static_cast<WindowProps *>(glfwGetWindowUserPointer(window));
 
         data.Width = uWidth;
         data.Height = uHeight;
@@ -171,7 +178,7 @@ void Window::SetCursor(bool enabled) {
                    enabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
 }
 
-float Window::GetTime() const { return (float)glfwGetTime(); }
+float Window::GetTime() const { return static_cast<float>(glfwGetTime()); }
 
 void Window::ResetTime() { glfwSetTime(0.0); }
 
@@ -194,12 +201,12 @@ void Window::SetupOpenGL() {
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     NG_CRITICAL("Failed to initialize GLAD");
 
-#if USE_DEBUG_MESSAGE_CALLBACK
+#if ENABLE_DEBUG_MESSAGE_CALLBACK
   glEnable(GL_DEBUG_OUTPUT);
   glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
   glDebugMessageCallback(debug_message_callback, nullptr);
-  glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE,
-                        GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, GL_TRUE);
+  glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr,
+                        GL_TRUE);
 #endif
 
   // background color, change if you want
@@ -257,10 +264,13 @@ void Window::SetupImGui() {
   ImGui_ImplOpenGL3_Init("#version 460");
 }
 
+#if ENABLE_DEBUG_MESSAGE_CALLBACK
 static void APIENTRY
 debug_message_callback(GLenum source, GLenum type, GLuint id, GLenum severity,
                        [[maybe_unused]] GLsizei length, const GLchar *message,
                        [[maybe_unused]] const void *userParam) {
+  // userParam is always ignored
+
   const char *sourceName;
   const char *typeName;
 
@@ -322,6 +332,8 @@ debug_message_callback(GLenum source, GLenum type, GLuint id, GLenum severity,
   }
 
   switch (severity) {
+  default:
+    [[fallthrough]];
   case GL_DEBUG_SEVERITY_NOTIFICATION:
     NG_TRACE("OpenGL callback: source: {}; type: {}, ID: {}\nMessage: {}",
              sourceName, typeName, id, message);
@@ -337,8 +349,8 @@ debug_message_callback(GLenum source, GLenum type, GLuint id, GLenum severity,
   case GL_DEBUG_SEVERITY_HIGH:
     NG_ERROR("OpenGL callback: source: {}; type: {}, ID: {}\nMessage: {}",
              sourceName, typeName, id, message);
+    // debug_break();
     break;
   }
-
-  __debugbreak();
 }
+#endif

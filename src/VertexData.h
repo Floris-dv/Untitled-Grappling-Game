@@ -1,17 +1,19 @@
 #pragma once
 // Header file for vertex data generation and data:
 
+#include "Log.h"
 #include "Vertex.h"
 
 // Simple sphere generation, not anything fancy
-inline std::pair<std::vector<MinimalVertex>, std::vector<GLuint>>
+inline constexpr std::pair<std::vector<MinimalVertex>,
+                           std::vector<unsigned int>>
 CreateSphere(size_t stacks, size_t slices);
 
-inline std::pair<std::vector<MinimalVertex>, std::vector<GLuint>>
-CreateCylinder(size_t stacks, size_t slices);
+inline constexpr std::pair<std::vector<SimpleVertex>, std::vector<unsigned int>>
+CreateCylinder(size_t slices);
 
 // Can't be constexpr because it's used by a span. Should not be modified
-const inline std::array<SimpleVertex, 36> boxVertices = {{
+const inline std::array<MinimalVertex, 36> boxVertices = {{
     // Front face
     {{-1.0f, -1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
     {{1.0f, -1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
@@ -152,22 +154,20 @@ constexpr std::array<float, 120> lightData = {{
     0.9659258262890683f, // outerCutOff ( = cos(17.5 degrees)
 }};
 
-std::pair<std::vector<MinimalVertex>, std::vector<unsigned int>>
+constexpr std::pair<std::vector<MinimalVertex>, std::vector<unsigned int>>
 CreateSphere(size_t stacks, size_t slices) {
-  static constexpr float PI = glm::pi<float>();
-  std::vector<glm::vec3> positions;
-  positions.reserve(stacks * slices);
-  std::vector<unsigned int> indices;
-  indices.reserve((slices * stacks + slices) * 6);
+  constexpr float PI = glm::pi<float>();
+  std::vector<MinimalVertex> vertices;
+  vertices.reserve((stacks + 1) * slices * 2);
 
   // loop through stacks.
-  for (size_t i = 0; i < stacks; ++i) {
-    float V = (float)i / (float)stacks;
+  for (size_t i = 0; i < stacks + 1; ++i) {
+    float V = static_cast<float>(i) / static_cast<float>(stacks);
     float phi = V * PI;
 
     // loop through the slices.
     for (size_t j = 0; j < slices; ++j) {
-      float U = (float)j / (float)slices;
+      float U = static_cast<float>(j) / static_cast<float>(slices);
       float theta = U * (PI * 2);
 
       // use spherical coordinates to calculate the positions.
@@ -175,65 +175,65 @@ CreateSphere(size_t stacks, size_t slices) {
       float y = cos(phi);
       float z = sin(theta) * sin(phi);
 
-      positions.push_back({x, y, z});
+      vertices.push_back({{x, y, z}, {x, y, z}});
     }
   }
 
-  std::vector<MinimalVertex> vertices;
-  vertices.reserve(stacks * slices * 2);
-
+  std::vector<unsigned int> indices;
+  indices.reserve(slices * stacks * 6);
   // Calc The Index Positions
-  for (size_t i = 0; i < slices * stacks + slices; ++i) {
-    indices.push_back((unsigned int)(i * 2));
-    indices.push_back((unsigned int)((i + slices + 1) * 2));
-    indices.push_back((unsigned int)((i + slices) * 2));
-    // MAYBE: add tangents/bitangents here
-    vertices.emplace_back(positions[i],
-                          glm::cross(positions[i] - positions[i + slices],
-                                     positions[i] - positions[i + slices + 1]));
-    indices.push_back((unsigned int)(i * 2));
-    indices.push_back((unsigned int)((i + 1) * 2));
-    indices.push_back((unsigned int)((i + slices + 1) * 2));
-
-    vertices.emplace_back(positions[i],
-                          glm::cross(positions[i] - positions[i + slices + 1],
-                                     positions[i] - positions[i + 1]));
+  for (unsigned int i = 0; i < slices * stacks; ++i) {
+    indices.push_back(i);
+    indices.push_back(i + static_cast<unsigned int>(slices) + 1);
+    indices.push_back(i + static_cast<unsigned int>(slices));
+    indices.push_back(i);
+    indices.push_back(i + 1);
+    indices.push_back(i + static_cast<unsigned int>(slices) + 1);
   }
 
   return std::make_pair(vertices, indices);
 }
 
-// Stacks = number of pizza slices
-// Slices = number of hockey pucks, minus one
-std::pair<std::vector<MinimalVertex>, std::vector<unsigned int>>
-CreateCylinder(size_t stacks, size_t slices) {
-  static constexpr float PI = glm::pi<float>();
+// Slices = number of pizza slices
+constexpr std::pair<std::vector<SimpleVertex>, std::vector<unsigned int>>
+CreateCylinder(size_t slices) {
+  constexpr float PI = glm::pi<float>();
 
-  std::vector<glm::vec3> positions;
-  positions.reserve(stacks * slices);
-  std::vector<unsigned int> indices;
-  indices.reserve((slices * stacks + slices) * 6);
-
-  std::vector<MinimalVertex> vertices;
-  vertices.reserve(2 * stacks * slices);
-
+  std::vector<SimpleVertex> vertices;
+  vertices.reserve(2 * slices);
   // loop through stacks.
-  for (size_t i = 0; i < stacks; ++i) {
-    float V = (float)i / (float)stacks;
-    float phi = V * PI;
-
+  for (float y = 0.0f; y < 2.0f; y++) {
     // loop through the slices.
     for (size_t j = 0; j < slices; ++j) {
-      float U = (float)j / (float)slices;
+      float U = static_cast<float>(j) / static_cast<float>(slices);
       float theta = U * (PI * 2);
 
       // use spherical coordinates to calculate the positions.
-      float x = cos(theta) * sin(phi);
-      float y = cos(phi);
-      float z = sin(theta) * sin(phi);
+      float x = glm::cos(theta);
+      float z = glm::sin(theta);
 
-      positions.push_back({x, y, z});
+      vertices.push_back({{x, y, z}, {x, 0.0f, z}, {U, y}});
     }
   }
+  std::vector<unsigned int> indices;
+  indices.reserve(6 * slices);
+
+  for (unsigned int i = 0; i < slices - 1; ++i) {
+    indices.push_back(i);
+    indices.push_back(i + static_cast<unsigned int>(slices) + 1);
+    indices.push_back(i + static_cast<unsigned int>(slices));
+    indices.push_back(i);
+    indices.push_back(i + 1);
+    indices.push_back(i + static_cast<unsigned int>(slices) + 1);
+  }
+
+  // Fix the wraparound
+  indices.push_back(2 * static_cast<unsigned int>(slices) - 1);
+  indices.push_back(static_cast<unsigned int>(slices) - 1);
+  indices.push_back(static_cast<unsigned int>(slices));
+  indices.push_back(static_cast<unsigned int>(slices));
+  indices.push_back(static_cast<unsigned int>(slices) - 1);
+  indices.push_back(0);
+
   return std::make_pair(vertices, indices);
 }

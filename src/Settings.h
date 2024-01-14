@@ -3,23 +3,19 @@
 // Graphics like beatsaber, first person grappler
 
 #define USE_DEBUG_MESSAGE_CALLBACK 1
-
-#define ENABLE_HDR 1 // only works when ENABLE_POSTPROCESSING is 1
-#define ENABLE_BLOOM                                                           \
-  1 // ENABLE_HDR is adviced when turning this option on, only works when
-    // ENABLE_POSTPROCESSING is 1
-
 // enables gamma correction
 #define CORRECT_GAMMA 0
 
-// makes the thing parallel, can't be used with a renderer
 #define QUICK_LOADING 1
 
-#define ENABLE_DEFERRED_SHADING 0
+#define STDOUT_LOGGING 0
+#define FILE_LOGGING 1
 
-#define USE_RENDERER 0
-
-#define DIST 0
+// Only enable logging if there's somewhere to log to
+#define ENABLE_LOGGING (STDOUT_LOGGING || FILE_LOGGING)
+// No point doing it in 'debug mode' if we're not even logging anything
+#define ENABLE_DEBUG_MESSAGE_CALLBACK                                          \
+  (USE_DEBUG_MESSAGE_CALLBACK && ENABLE_LOGGING)
 
 /* TODO:
  * Make submeshes use a texture atlas
@@ -33,4 +29,3 @@
  * Frustum Culling
  * Window Class
  */
-

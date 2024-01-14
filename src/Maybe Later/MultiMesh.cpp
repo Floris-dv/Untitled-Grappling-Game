@@ -1,6 +1,7 @@
 #include "pch.h"
-#include "MultiMesh.h"
+
 #include "Camera.h"
+#include "MultiMesh.h"
 
 #include <glad/glad.h>
 
@@ -8,233 +9,244 @@
 
 #include "Transform.h"
 
-static const BufferLayout vertexBufferLayout = {
-	0,
-	sizeof(Vertex),
-	{
-		{GL_FLOAT, 3}, // position
-		{GL_FLOAT, 3}, // normal
-		{GL_FLOAT, 2}, // texCoords
-		{GL_FLOAT, 3}, // tangent
-		{GL_FLOAT, 3}, // bitangent
-	},
-	false
-};
+static const BufferLayout vertexBufferLayout = {0,
+                                                sizeof(Vertex),
+                                                {
+                                                    {GL_FLOAT, 3}, // position
+                                                    {GL_FLOAT, 3}, // normal
+                                                    {GL_FLOAT, 2}, // texCoords
+                                                    {GL_FLOAT, 3}, // tangent
+                                                    {GL_FLOAT, 3}, // bitangent
+                                                },
+                                                false};
 
-static bool test_AABB_against_frustum(const glm::mat4& MVP, const aiAABB& boundingBox) { return true; }
-
-void MultiMesh::Add(const std::vector<Vertex>& verts, const AABB& boundingBox, const std::vector<unsigned int>& idxs, std::vector<Texture>&& m_Textures, const glm::vec3& diff, const glm::vec3& spec, bool m_UseTextures) {
-	SubMesh sm;
-	sm.DiffColor = diff;
-	sm.SpecColor = spec;
-	sm.UseTextures = m_UseTextures;
-	sm.Parent = this;
-	sm.Textures = std::move(m_Textures);
-	sm.IndexCount = idxs.size();
-	sm.IndexOffset = m_Indices.size();
-	sm.VertexCount = verts.size();
-	sm.VertexOffset = m_Vertices.size();
-	sm.BoundingBox = boundingBox;
-	m_Meshes.push_back(std::move(sm));
-
-	size_t s = m_Vertices.size();
-	m_Vertices.insert(m_Vertices.end(), verts.begin(), verts.end());
-
-	m_Indices.reserve(m_Indices.size() + idxs.size());
-	for (int i = 0; i < idxs.size(); i++) {
-		m_Indices.push_back(idxs[i] + s);
-	}
+static bool test_AABB_against_frustum(const glm::mat4 &MVP,
+                                      const aiAABB &boundingBox) {
+  return true;
 }
 
-void MultiMesh::Add(const std::vector<Vertex>& verts, const AABB& boundingBox, const std::vector<unsigned int>& idxs, std::vector<std::shared_future<LoadingTexture*>>&& m_Textures, const glm::vec3& diff, const glm::vec3& spec, bool useTexs) {
-	SubMesh sm;
-	sm.DiffColor = diff;
-	sm.SpecColor = spec;
-	sm.UseTextures = useTexs;
-	sm.Parent = this;
-	sm.LoadingTextures = std::move(m_Textures);
-	sm.IndexCount = idxs.size();
-	sm.IndexOffset = m_Indices.size();
-	sm.VertexCount = verts.size();
-	sm.VertexOffset = m_Vertices.size();
-	sm.BoundingBox = boundingBox;
-	m_Meshes.push_back(std::move(sm));
+void MultiMesh::Add(const std::vector<Vertex> &verts, const AABB &boundingBox,
+                    const std::vector<unsigned int> &idxs,
+                    std::vector<Texture> &&m_Textures, const glm::vec3 &diff,
+                    const glm::vec3 &spec, bool m_UseTextures) {
+  SubMesh sm;
+  sm.DiffColor = diff;
+  sm.SpecColor = spec;
+  sm.UseTextures = m_UseTextures;
+  sm.Parent = this;
+  sm.Textures = std::move(m_Textures);
+  sm.IndexCount = idxs.size();
+  sm.IndexOffset = m_Indices.size();
+  sm.VertexCount = verts.size();
+  sm.VertexOffset = m_Vertices.size();
+  sm.BoundingBox = boundingBox;
+  m_Meshes.push_back(std::move(sm));
 
-	size_t vertexOffset = m_Vertices.size();
+  size_t s = m_Vertices.size();
+  m_Vertices.insert(m_Vertices.end(), verts.begin(), verts.end());
 
-	m_Vertices.insert(m_Vertices.end(), verts.begin(), verts.end());
-
-	m_Indices.reserve(m_Indices.size() + idxs.size());
-
-	// correct indices, as they are calculated with the new vertices in mind
-	for (int i = 0; i < idxs.size(); i++) {
-		m_Indices.push_back(idxs[i] + vertexOffset);
-	}
+  m_Indices.reserve(m_Indices.size() + idxs.size());
+  for (int i = 0; i < idxs.size(); i++) {
+    m_Indices.push_back(idxs[i] + s);
+  }
 }
 
-void MultiMesh::Draw(Shader& shader, const Frustum& camFrustum, const Transform& transform, bool setTextures) const
-{
-	if (!m_OpenGLPrepared)
-		return;
+void MultiMesh::Add(
+    const std::vector<Vertex> &verts, const AABB &boundingBox,
+    const std::vector<unsigned int> &idxs,
+    std::vector<std::shared_future<LoadingTexture *>> &&m_Textures,
+    const glm::vec3 &diff, const glm::vec3 &spec, bool useTexs) {
+  SubMesh sm;
+  sm.DiffColor = diff;
+  sm.SpecColor = spec;
+  sm.UseTextures = useTexs;
+  sm.Parent = this;
+  sm.LoadingTextures = std::move(m_Textures);
+  sm.IndexCount = idxs.size();
+  sm.IndexOffset = m_Indices.size();
+  sm.VertexCount = verts.size();
+  sm.VertexOffset = m_Vertices.size();
+  sm.BoundingBox = boundingBox;
+  m_Meshes.push_back(std::move(sm));
 
-	VAO.Bind();
-	for (int i = 0; i < m_Meshes.size(); i++) {
-		if (m_Meshes[i].BoundingBox.isOnFrustum(camFrustum, transform))
-			m_Meshes[i].Render(shader, setTextures);
-	}
+  size_t vertexOffset = m_Vertices.size();
 
-	VAO.UnBind();
+  m_Vertices.insert(m_Vertices.end(), verts.begin(), verts.end());
 
-	glActiveTexture(GL_TEXTURE0);
+  m_Indices.reserve(m_Indices.size() + idxs.size());
+
+  // correct indices, as they are calculated with the new vertices in mind
+  for (int i = 0; i < idxs.size(); i++) {
+    m_Indices.push_back(idxs[i] + vertexOffset);
+  }
 }
 
-void MultiMesh::DrawInstanced(Shader& shader, unsigned int count, const Frustum& camFrustum, const Transform& transform, bool setTextures) const
-{
-	if (!m_OpenGLPrepared)
-		return;
+void MultiMesh::Draw(Shader &shader, const Frustum &camFrustum,
+                     const Transform &transform, bool setTextures) const {
+  if (!m_OpenGLPrepared)
+    return;
 
-	for (auto& m : m_Meshes)
-		m.Render(shader, setTextures, count);
+  VAO.Bind();
+  for (int i = 0; i < m_Meshes.size(); i++) {
+    if (m_Meshes[i].BoundingBox.isOnFrustum(camFrustum, transform))
+      m_Meshes[i].Render(shader, setTextures);
+  }
 
-	VAO.UnBind();
+  VAO.UnBind();
 
-	glActiveTexture(GL_TEXTURE0);
+  glActiveTexture(GL_TEXTURE0);
 }
 
-void MultiMesh::DoOpenGL(bool deleteAfter) noexcept
-{
-	if (m_OpenGLPrepared)
-		return;
+void MultiMesh::DrawInstanced(Shader &shader, unsigned int count,
+                              const Frustum &camFrustum,
+                              const Transform &transform,
+                              bool setTextures) const {
+  if (!m_OpenGLPrepared)
+    return;
 
-	m_OpenGLPrepared = true;
+  for (auto &m : m_Meshes)
+    m.Render(shader, setTextures, count);
 
-	// create buffers/arrays
-	VAO = VertexArray();
-	m_VBO = VertexBuffer((unsigned int)m_Vertices.size() * sizeof(Vertex), m_Vertices.data());
-	m_IBO = IndexBuffer((unsigned int)m_Indices.size() * sizeof(unsigned int), m_Indices.data());
+  VAO.UnBind();
 
-	VAO.AddBuffer(m_VBO, vertexBufferLayout);
-	VAO.AddIndexBuffer(m_IBO);
-
-	for (auto& m : m_Meshes)
-		m.InitTextures(deleteAfter);
-
-	if (deleteAfter) {
-		m_Vertices.clear();
-		m_Indices.clear();
-	}
+  glActiveTexture(GL_TEXTURE0);
 }
 
-MultiMesh::MultiMesh(MultiMesh&& other) noexcept : VAO(false)
-{
-	m_VBO = std::move(other.m_VBO);
-	VAO = std::move(other.VAO);
-	m_IBO = std::move(other.m_IBO);
+void MultiMesh::DoOpenGL(bool deleteAfter) noexcept {
+  if (m_OpenGLPrepared)
+    return;
 
-	m_Meshes = std::move(other.m_Meshes);
+  m_OpenGLPrepared = true;
 
-	m_OpenGLPrepared = other.m_OpenGLPrepared;
+  // create buffers/arrays
+  VAO = VertexArray();
+  m_VBO = VertexBuffer(static_cast<unsigned int>(m_Vertices.size()) *
+                           sizeof(Vertex),
+                       m_Vertices.data());
+  m_IBO = IndexBuffer(static_cast<unsigned int>(m_Indices.size()) *
+                          sizeof(unsigned int),
+                      m_Indices.data());
 
-	m_Vertices = std::move(other.m_Vertices);
-	m_Indices = std::move(other.m_Indices);
+  VAO.AddBuffer(m_VBO, vertexBufferLayout);
+  VAO.AddIndexBuffer(m_IBO);
+
+  for (auto &m : m_Meshes)
+    m.InitTextures(deleteAfter);
+
+  if (deleteAfter) {
+    m_Vertices.clear();
+    m_Indices.clear();
+  }
 }
 
-MultiMesh& MultiMesh::operator=(MultiMesh&& other) noexcept
-{
-	m_VBO = std::move(other.m_VBO);
-	VAO = std::move(other.VAO);
-	m_IBO = std::move(other.m_IBO);
+MultiMesh::MultiMesh(MultiMesh &&other) noexcept : VAO(false) {
+  m_VBO = std::move(other.m_VBO);
+  VAO = std::move(other.VAO);
+  m_IBO = std::move(other.m_IBO);
 
-	m_Meshes = std::move(other.m_Meshes);
+  m_Meshes = std::move(other.m_Meshes);
 
-	m_OpenGLPrepared = other.m_OpenGLPrepared;
+  m_OpenGLPrepared = other.m_OpenGLPrepared;
 
-	m_Vertices = std::move(other.m_Vertices);
-	m_Indices = std::move(other.m_Indices);
-
-	return *this;
+  m_Vertices = std::move(other.m_Vertices);
+  m_Indices = std::move(other.m_Indices);
 }
 
-void MultiMesh::SubMesh::Render(Shader& shader, bool setTextures) const
-{
-	if (IndexCount == 0 || VertexCount == 0)
-		return;
+MultiMesh &MultiMesh::operator=(MultiMesh &&other) noexcept {
+  m_VBO = std::move(other.m_VBO);
+  VAO = std::move(other.VAO);
+  m_IBO = std::move(other.m_IBO);
 
-	if (setTextures)
-		SetTextures(shader);
+  m_Meshes = std::move(other.m_Meshes);
 
-	shader.SetBool("material.diffspecTex", setTextures && UseTextures);
+  m_OpenGLPrepared = other.m_OpenGLPrepared;
 
-	Parent->VAO.Bind();
-	glDrawElements(GL_TRIANGLES, IndexCount, GL_UNSIGNED_INT, (void*)(IndexOffset * sizeof(unsigned int)));
+  m_Vertices = std::move(other.m_Vertices);
+  m_Indices = std::move(other.m_Indices);
+
+  return *this;
 }
 
-void MultiMesh::SubMesh::Render(Shader& shader, bool setTextures, unsigned int count) const
-{
-	if (IndexCount == 0 || VertexCount == 0)
-		return;
+void MultiMesh::SubMesh::Render(Shader &shader, bool setTextures) const {
+  if (IndexCount == 0 || VertexCount == 0)
+    return;
 
-	if (setTextures)
-		SetTextures(shader);
+  if (setTextures)
+    SetTextures(shader);
 
-	shader.SetBool("material.diffspecTex", setTextures && UseTextures);
+  shader.SetBool("material.diffspecTex", setTextures && UseTextures);
 
-	Parent->VAO.Bind();
-	glDrawElementsInstanced(GL_TRIANGLES, IndexCount, GL_UNSIGNED_INT, (void*)(IndexOffset * sizeof(unsigned int)), count);
+  Parent->VAO.Bind();
+  glDrawElements(GL_TRIANGLES, IndexCount, GL_UNSIGNED_INT,
+                 static_cast<void *>(IndexOffset * sizeof(unsigned int));
 }
 
-void MultiMesh::SubMesh::InitTextures(bool deleteAfter)
-{
-	if (LoadingTextures.empty())
-		return;
+void MultiMesh::SubMesh::Render(Shader &shader, bool setTextures,
+                                unsigned int count) const {
+  if (IndexCount == 0 || VertexCount == 0)
+    return;
 
-	for (auto& lt : LoadingTextures) {
-		auto& s = lt.get();
-		Textures.push_back(s->Finish());
-		if (deleteAfter)
-			delete s;
-	}
-	LoadingTextures.clear();
+  if (setTextures)
+    SetTextures(shader);
+
+  shader.SetBool("material.diffspecTex", setTextures && UseTextures);
+
+  Parent->VAO.Bind();
+  glDrawElementsInstanced(
+      GL_TRIANGLES, IndexCount, GL_UNSIGNED_INT,
+      static_cast<void *>(IndexOffset * sizeof(unsigned int)), count);
 }
 
-void MultiMesh::SubMesh::SetTextures(Shader& shader) const
-{
-	shader.Use();
-	shader.SetBool("material.diffspecTex", UseTextures);
+void MultiMesh::SubMesh::InitTextures(bool deleteAfter) {
+  if (LoadingTextures.empty())
+    return;
 
-	if (!UseTextures) {
-		shader.SetVec3("material.diff0", DiffColor);
-		shader.SetVec3("material.spec0", SpecColor);
+  for (auto &lt : LoadingTextures) {
+    auto &s = lt.get();
+    Textures.push_back(s->Finish());
+    if (deleteAfter)
+      delete s;
+  }
+  LoadingTextures.clear();
+}
 
-		return;
-	}
+void MultiMesh::SubMesh::SetTextures(Shader &shader) const {
+  shader.Use();
+  shader.SetBool("material.diffspecTex", UseTextures);
 
-	unsigned int diffuseNr = 0, specularNr = 0, normalNr = 0, heightNr = 0;
+  if (!UseTextures) {
+    shader.SetVec3("material.diff0", DiffColor);
+    shader.SetVec3("material.spec0", SpecColor);
 
-	for (int i = 0; i < Textures.size(); i++) {
-		std::string number;
-		TextureType type = Textures[i].Type;
+    return;
+  }
 
-		switch (type) {
-		case TextureType::diffuse:
-			number = std::to_string(diffuseNr++);
-			break;
-		case TextureType::specular:
-			number = std::to_string(specularNr++); // transfer unsigned int to stream
-			break;
-		case TextureType::normal:
-			number = std::to_string(normalNr++); // transfer unsigned int to stream
-			break;
-		case TextureType::height:
-			number = std::to_string(heightNr++); // transfer unsigned int to stream
-			break;
-		default:
-			throw "ERROR: Texture type is not defined\n";
-		}
+  unsigned int diffuseNr = 0, specularNr = 0, normalNr = 0, heightNr = 0;
 
-		shader.SetInt((names[(int)type] + number).c_str(), i);
-		glBindTextureUnit(i, Textures[i].ID);
-	}
+  for (int i = 0; i < Textures.size(); i++) {
+    std::string number;
+    TextureType type = Textures[i].Type;
 
-	shader.SetBool("material.normalMapping", (bool)normalNr);
+    switch (type) {
+    case TextureType::diffuse:
+      number = std::to_string(diffuseNr++);
+      break;
+    case TextureType::specular:
+      number = std::to_string(specularNr++); // transfer unsigned int to stream
+      break;
+    case TextureType::normal:
+      number = std::to_string(normalNr++); // transfer unsigned int to stream
+      break;
+    case TextureType::height:
+      number = std::to_string(heightNr++); // transfer unsigned int to stream
+      break;
+    default:
+      throw "ERROR: Texture type is not defined\n";
+    }
+
+    shader.SetInt((names[static_cast<int>(type)] + number).c_str(), i);
+    glBindTextureUnit(i, Textures[i].ID);
+  }
+
+  shader.SetBool("material.normalMapping", static_cast<bool>(normalNr));
 }

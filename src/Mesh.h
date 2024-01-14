@@ -1,5 +1,6 @@
 #pragma once
 #include "DataBuffers.h"
+#include "Log.h"
 #include "Material.h"
 #include "Texture.h"
 #include "UtilityMacros.h"
@@ -90,8 +91,10 @@ template <typename T> void Mesh<T>::swap(Mesh<T> &other) {
 template <typename T>
 inline void Mesh<T>::Draw(const glm::mat4 &modelMatrix,
                           const EmptyMaterial *material, Shader *shader) {
-  if (!m_NumVerts)
+  if (!m_NumVerts) {
+    NG_WARN("Trying to draw empty Mesh");
     return;
+  }
 
   material->Load(*shader);
 
@@ -166,7 +169,7 @@ inline Mesh<T>::Mesh(std::span<const T> vertices,
                      const BufferLayout &bufferLayout,
                      std::span<const GLuint> indices)
     : m_UseIBO(!indices.empty()),
-      m_VBO((unsigned int)vertices.size_bytes(), vertices.data()) {
+      m_VBO(static_cast<unsigned int>(vertices.size_bytes()), vertices.data()) {
   m_VAO.AddBuffer(m_VBO, bufferLayout);
 
   if (m_UseIBO) {

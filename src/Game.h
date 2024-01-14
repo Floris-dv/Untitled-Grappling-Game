@@ -5,15 +5,26 @@
 #include "Endscreen.h"
 #include "Level.h"
 #include "LevelTimer.h"
-#include "Object.h"
+#include "PostprocessingLayer.h"
 #include "Shader.h"
 #include "Vertex.h"
 #include "Window.h"
-#include <optional>
+#include <glad/glad.h>
 
 class Game {
 public:
-  enum class GameState { Playing, Paused, Editing, Endscreen };
+  enum class GameState : uint8_t {
+    // format: least significant bit decides if should be paused or not
+    Endscreen = 0b0000'0001,
+    Playing = 0b0000'0010,
+    PlayingPaused = 0b0000'0011,
+    Editing = 0b0000'0100,
+    EditingPaused = 0b0000'0101,
+  };
+  struct GameSettings {
+    BloomSettings BloomOptions;
+  };
+  Camera::CameraOptions *CameraOptions;
 
 protected:
   // TODO: maybe make this class own the shaders
@@ -25,8 +36,11 @@ protected:
 
   float m_CrosshairSize = 0.1f;
   std::variant<Texture, LoadingTexture::Future> m_CrosshairTexture;
+  PostprocessingLayer m_PostprocessingLayer;
+
   LevelTimer m_Timer;
-  GameState m_State = GameState::Paused;
+  GameState m_State = GameState::PlayingPaused;
+  GameSettings m_Settings;
 
   Window *m_Window = nullptr;
 
@@ -41,7 +55,7 @@ protected:
   std::unique_ptr<Camera> m_Camera;
   Level m_Level;
   Endscreen m_Endscreen;
-  Mesh<MinimalVertex> m_Rope;
+  Mesh<SimpleVertex> m_Rope;
 
   int m_LevelNr = 1;
   size_t m_BlockEditingIndex = 0;
@@ -53,20 +67,11 @@ protected:
 public:
   void InitializeCallbacks(); // Needs to be called after construction
 
-  struct GameSettings {
-    Camera::CameraOptions *CameraOptions;
-    BloomSettings BloomSettings;
-  } Settings;
-
-  // Game() : Settings({nullptr, BloomSettings{0.8f, 0.05f, {0, 0}, 0, false}})
-  // {}
-
   Game(const std::string &startLevel, Shader *instancedShader,
-       Shader *normalShader, Shader *textureShader, Window *window);
+       Shader *normalShader, Shader *textureShader, VertexArray *screenVAO,
+       Window *window);
 
   DELETE_COPY_CONSTRUCTOR(Game)
-
-  // Game(Game &&other) noexcept : m_AudioSystem(nullptr) { swap(other); }
 
   ~Game() {
     if (!m_CrosshairTexture.valueless_by_exception() &&
@@ -83,13 +88,13 @@ public:
   // Part of the update phase that is after the Render phase
   void Finalize();
 
-  // Maybe Later?
-  // void Postprocess(unsigned int mainTextureID);
+  void Postprocess(unsigned int mainTextureID);
 
   // Gets called after postprocessing, Depth testing is disabled
-  void DrawUI(VertexArray *screenVAO);
+  void DrawUI();
 
   void SetLevel(int level);
+  void SetOptions(const GameSettings &settings);
 
   void Reset() { m_Camera->Reset(); }
 

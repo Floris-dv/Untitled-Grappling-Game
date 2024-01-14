@@ -2,10 +2,10 @@
 #include "Settings.h"
 #include "UtilityMacros.h"
 
-#if !DIST
 DISABLE_WARNING_PUSH
 DISABLE_WARNING_DEPRECATION
 
+#if ENABLE_LOGGING
 #include <spdlog/fmt/ostr.h>
 #include <spdlog/spdlog.h>
 #define GLM_ENABLE_EXPERIMENTAL
@@ -72,7 +72,15 @@ inline OStream &operator<<(OStream &os, glm::qua<T, Q> quaternion) {
 
 #endif
 
-#define NG_CATCH_ALL(s)                                                        \
+#define NG_CATCH_ALL()                                                         \
+  catch ([[maybe_unused]] const std::exception &e) {                           \
+    NG_ERROR("{}", e.what());                                                  \
+  }                                                                            \
+  catch ([[maybe_unused]] const std::string &e) {                              \
+    NG_ERROR("{}", e);                                                         \
+  }
+
+#define NG_CATCH_ALL_N(s)                                                      \
   catch (const std::exception &e) {                                            \
     NG_ERROR("{} {}", s, e.what());                                            \
   }                                                                            \

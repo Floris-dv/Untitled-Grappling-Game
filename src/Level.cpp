@@ -4,19 +4,18 @@
 #include "GrapplingCamera.h"
 #include "Level.h"
 #include "Log.h"
+#include "RigidBody.h"
 #include "SaveFile.h"
 #include "UtilityMacros.h"
-#include "Vertex.h"
 #include "VertexData.h"
 #include "Window.h"
 #include "imgui/imgui.h"
 #include <ImGuizmo/ImGuizmo.h>
-#include <glm/gtx/norm.hpp>
 
 template <typename OStream>
 inline OStream &operator<<(OStream &output, Level::Block const &input) {
-  output << input.Start;
-  output << input.End;
+  output << input.Center;
+  output << input.Halfsize;
   output << input.Rotation;
 
   return output;
@@ -24,8 +23,8 @@ inline OStream &operator<<(OStream &output, Level::Block const &input) {
 
 template <typename IStream>
 inline IStream &operator>>(IStream &input, Level::Block &output) {
-  input >> output.Start;
-  input >> output.End;
+  input >> output.Center;
+  input >> output.Halfsize;
   input >> output.Rotation;
 
   return input;
@@ -78,26 +77,26 @@ void Level::Write(std::string_view levelFile) {
 }
 
 void Level::Render(Material *material, Material *finishMaterial) {
-  Block::Object.DrawInstanced(material, true,
-                              (GLsizei)m_Matrices.size() -
-                                  1); // finish box needs to be another color
-  Block::Object.Draw(m_Matrices.front(), finishMaterial, true);
+  s_BlockMesh.DrawInstanced(material, true,
+                            (GLsizei)m_Matrices.size() -
+                                1); // finish box needs to be another color
+  s_BlockMesh.Draw(m_Matrices.front(), finishMaterial, true);
 }
 
 void Level::Render(Shader *shader, Shader *finishShader) {
   m_FinishMaterial.Load(*finishShader);
 
-  Block::Object.DrawInstanced(&m_MainMaterial, shader,
-                              (GLsizei)m_Matrices.size() - 1);
+  s_BlockMesh.DrawInstanced(&m_MainMaterial, shader,
+                            (GLsizei)m_Matrices.size() - 1);
 
-  Block::Object.Draw(m_Matrices.front(), &m_FinishMaterial, finishShader);
+  s_BlockMesh.Draw(m_Matrices.front(), &m_FinishMaterial, finishShader);
 }
 
 void Level::RenderOneByOne(Shader *shader, Shader *finishShader) {
   for (size_t i = 1; i < m_Matrices.size(); i++)
-    Block::Object.Draw(m_Matrices[i], &m_MainMaterial, shader);
+    s_BlockMesh.Draw(m_Matrices[i], &m_MainMaterial, shader);
 
-  Block::Object.Draw(m_Matrices.front(), &m_FinishMaterial, finishShader);
+  s_BlockMesh.Draw(m_Matrices.front(), &m_FinishMaterial, finishShader);
 }
 
 void Level::RenderEditingMode(size_t &index, Camera *camera) {
@@ -126,7 +125,7 @@ void Level::RenderEditingMode(size_t &index, Camera *camera) {
     ImGui::SameLine();
     if (ImGui::Button("+")) {
       m_Matrices.push_back(glm::identity<glm::mat4>());
-      m_Blocks.push_back(Level::Block{});
+      m_Blocks.push_back({});
       index = m_Matrices.size() - 1;
     }
   }
@@ -151,20 +150,22 @@ void Level::RenderEditingMode(size_t &index, Camera *camera) {
   ImGuizmo::DecomposeMatrixToComponents(
       matrix, glm::value_ptr(matrixTranslation), glm::value_ptr(matrixRotation),
       glm::value_ptr(matrixScale));
+
   ImGui::DragFloat3("Tr", glm::value_ptr(matrixTranslation), 1.0f);
   ImGui::DragFloat3("Rt", glm::value_ptr(matrixRotation), 0.1f);
   ImGui::DragFloat3("Sc", glm::value_ptr(matrixScale), 1.0f);
-  ImGuizmo::RecomposeMatrixFromComponents(
-      glm::value_ptr(matrixTranslation), glm::value_ptr(matrixRotation),
-      glm::value_ptr(matrixScale), matrix); // changes m_Matrices[index]
+  ImGuizmo::RecomposeMatrixFromComponents(glm::value_ptr(matrixTranslation),
+                                          glm::value_ptr(matrixRotation),
+                                          glm::value_ptr(matrixScale),
+                                          matrix); // changes m_Matrices[index]
 
-  ImGui::Text("Quaternion: %f %f %f %f", m_Blocks[index].Rotation.x,
-              m_Blocks[index].Rotation.y, m_Blocks[index].Rotation.z,
-              m_Blocks[index].Rotation.w);
-
-  m_Blocks[index] = {matrixTranslation - matrixScale * 0.5f,
-                     matrixTranslation + matrixScale * 0.5f, 0.1f,
+  m_Blocks[index] = {matrixTranslation, matrixScale * 0.5f,
                      glm::quat(glm::radians(matrixRotation))};
+
+  m_BoxColliders[index].Center = matrixTranslation;
+  m_BoxColliders[index].MatrixRS = glm::mat3(m_Matrices[index]);
+  m_BoxColliders[index].Inverse_MatrixRS =
+      glm::inverse(m_BoxColliders[index].MatrixRS);
 
   if (s_CurrentGizmoOperation != ImGuizmo::SCALE) {
     if (ImGui::RadioButton("Local", s_CurrentGizmoMode == ImGuizmo::LOCAL))
@@ -192,8 +193,8 @@ void Level::RenderEditingMode(size_t &index, Camera *camera) {
   default:
     break;
   }
-  ImGuiIO &io = ImGui::GetIO();
-  ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+  ImGuizmo::SetRect(0, 0, static_cast<float>(m_Window->GetWidth()),
+                    static_cast<float>(m_Window->GetHeight()));
   ImGuizmo::Manipulate(glm::value_ptr(camera->GetViewMatrix()),
                        glm::value_ptr(camera->GetProjMatrix()),
                        s_CurrentGizmoOperation, s_CurrentGizmoMode, matrix,
@@ -210,29 +211,8 @@ void Level::RenderEditingMode(size_t &index, Camera *camera) {
       Write(m_FileName);
 }
 
-struct OBB {
-  glm::vec3 pos = glm::vec3{0.0f};
-  glm::vec3 axisX{1.0f, 0.0f, 0.0f}, axisY{0.0f, 1.0f, 0.0f},
-      axisZ{0.0f, 0.0f, 1.0f};
-  glm::vec3 halfSize = glm::vec3{0.5f};
-
-  OBB() {}
-
-  OBB(const Level::Block &block) {
-    pos = (block.Start + block.End) * 0.5f;
-    axisX = block.Rotation * glm::vec3(1.0f, 0.0f, 0.0f);
-    axisY = block.Rotation * glm::vec3(0.0f, 1.0f, 0.0f);
-    axisZ = block.Rotation * glm::vec3(0.0f, 0.0f, 1.0f);
-    halfSize = (block.End - block.Start) * 0.5f;
-  }
-};
-
-static bool CollisionCheck(const OBB &box1, const OBB &box2);
-
-// Assumes camera is colliding with block
-static void BounceOn(const Level::Block &block, GrapplingCamera &camera);
-
 bool Level::UpdatePhysics(GrapplingCamera &camera) {
+  camera.IsOnGround = false;
   if (m_StartTime == 0.0f &&
       (glm::abs(camera.Vel.x) + glm::abs(camera.Vel.z)) > 0.0f) {
     m_StartTime = m_Window->GetTime();
@@ -243,25 +223,32 @@ bool Level::UpdatePhysics(GrapplingCamera &camera) {
     m_StartTime = 0.0f;
   }
 
-  OBB cameraBox{};
-  cameraBox.pos = camera.PhysicsPosition;
-  // camera box has no rotation
   // TODO: add better constant factor for the camera block here
-  cameraBox.halfSize = glm::vec3{0.2f};
+  CapsuleCollider cameraCapsule;
+  cameraCapsule.MatrixRS = camera.GetModelMatrix();
+  cameraCapsule.Inverse_MatrixRS = glm::inverse(camera.GetModelMatrix());
+  cameraCapsule.Center = camera.PhysicsPosition;
+  cameraCapsule.r = 1;
+  cameraCapsule.y_base = 1;
+  cameraCapsule.y_cap = 2;
 
   for (size_t i = 1; i < m_Blocks.size() - 1; i++) {
-    if (CollisionCheck(cameraBox, OBB(m_Blocks[i]))) {
-      ImGui::Text("Inside!!!");
-      BounceOn(m_Blocks[i], camera);
+    HitInfo collision = Collide(&cameraCapsule, &m_BoxColliders[i]);
+    if (collision.Hit) {
+      float slope = glm::acos(glm::dot(collision.Normal, glm::vec3(0, 1, 0)));
+      if (slope < glm::radians(camera.MaxStandSlope)) {
+        camera.Vel.y = 0;
+        camera.IsOnGround = true;
+        camera.IsJumping = false;
+      }
+      camera.PhysicsPosition += collision.Normal * collision.PenetrationDepth;
+      camera.Position += collision.Normal * collision.PenetrationDepth;
     }
   }
 
   ImGui::Text("Distance from camera: %f", SDF(camera.PhysicsPosition));
 
-  if (CollisionCheck(cameraBox, OBB(m_Blocks.front())))
-    return true;
-
-  return false;
+  return Intersect(&cameraCapsule, &m_BoxColliders.front());
 }
 
 // Needs to be called when switching from RenderOneByOne() to Render()
@@ -274,116 +261,36 @@ void Level::UpdateInstanceVBO() {
 
 void Level::SetupInstanceVBO() {
   std::shared_ptr<Material> s(nullptr);
-  m_InstanceVBO = VertexBuffer(((unsigned int)m_Matrices.size() - 1) *
-                                   sizeof(m_Matrices[0]),
-                               &m_Matrices[1]);
+  m_InstanceVBO =
+      VertexBuffer((static_cast<unsigned int>(m_Matrices.size()) - 1) *
+                       sizeof(m_Matrices[0]),
+                   &m_Matrices[1]);
 
-  if (!Block::Object.IsValid())
-    Block::Object = Mesh<SimpleVertex>(boxVertices, SimpleVertex::Layout);
+  if (!s_BlockMesh.IsValid())
+    s_BlockMesh = Mesh<MinimalVertex>(boxVertices, MinimalVertex::Layout);
 
-  Block::Object.SetInstanceBuffer(m_InstanceVBO);
+  s_BlockMesh.SetInstanceBuffer(m_InstanceVBO);
 }
 
 void Level::SetupMatrices() {
   m_Matrices.clear();
+  m_BoxColliders.clear();
   m_Matrices.reserve(m_Blocks.size() - 1);
+  m_BoxColliders.reserve(m_Blocks.size() - 1);
 
   for (Block &block : m_Blocks) {
-    glm::vec3 start = block.Start;
-    block.Start = glm::min(start, block.End);
-    block.End = glm::max(start, block.End);
+    glm::mat4 matrix = glm::mat4_cast(block.Rotation) *
+                       glm::scale(glm::mat4{1.0f}, block.Halfsize);
 
-    // Extra factors are for help with that boxVertices are -1 to 1 instead of
-    // 0-1
-    glm::mat4 matrix =
-        glm::translate(glm::mat4(1.0f), 0.5f * (block.Start + block.End));
-    matrix *= glm::mat4(block.Rotation);
-    matrix = glm::scale(matrix, (block.End - block.Start) * 0.5f);
-
+    matrix[3] = glm::vec4(block.Center, 1.0f);
     m_Matrices.push_back(matrix);
+
+    BoxCollider boxCollider;
+    boxCollider.Center = block.Center;
+    boxCollider.MatrixRS = glm::mat3(matrix);
+    boxCollider.Inverse_MatrixRS = glm::inverse(boxCollider.MatrixRS);
+    m_BoxColliders.push_back(boxCollider);
   }
-}
-
-// Helper functions
-
-static bool GetSeparatingPlane(const glm::vec3 &rPos, const glm::vec3 &plane,
-                               const OBB &box1, const OBB &box2) {
-  using glm::abs;
-  using glm::compAdd; // Adds all the components individually together
-  return ((abs(compAdd(rPos * plane)) >
-           (abs(compAdd((box1.axisX * box1.halfSize[0]) * plane)) +
-            abs(compAdd((box1.axisY * box1.halfSize[1]) * plane)) +
-            abs(compAdd((box1.axisZ * box1.halfSize[2]) * plane)) +
-            abs(compAdd((box2.axisX * box2.halfSize[0]) * plane)) +
-            abs(compAdd((box2.axisY * box2.halfSize[1]) * plane)) +
-            abs(compAdd((box2.axisZ * box2.halfSize[2]) * plane)))));
-}
-
-static bool CollisionCheck(const OBB &box1, const OBB &box2) {
-  glm::vec3 rPos = box2.pos - box1.pos;
-
-  return !(
-      GetSeparatingPlane(rPos, box1.axisX, box1, box2) ||
-      GetSeparatingPlane(rPos, box1.axisY, box1, box2) ||
-      GetSeparatingPlane(rPos, box1.axisZ, box1, box2) ||
-      GetSeparatingPlane(rPos, box2.axisX, box1, box2) ||
-      GetSeparatingPlane(rPos, box2.axisY, box1, box2) ||
-      GetSeparatingPlane(rPos, box2.axisZ, box1, box2) ||
-      GetSeparatingPlane(rPos, glm::cross(box1.axisX, box2.axisX), box1,
-                         box2) ||
-      GetSeparatingPlane(rPos, glm::cross(box1.axisX, box2.axisY), box1,
-                         box2) ||
-      GetSeparatingPlane(rPos, glm::cross(box1.axisX, box2.axisZ), box1,
-                         box2) ||
-      GetSeparatingPlane(rPos, glm::cross(box1.axisY, box2.axisX), box1,
-                         box2) ||
-      GetSeparatingPlane(rPos, glm::cross(box1.axisY, box2.axisY), box1,
-                         box2) ||
-      GetSeparatingPlane(rPos, glm::cross(box1.axisY, box2.axisZ), box1,
-                         box2) ||
-      GetSeparatingPlane(rPos, glm::cross(box1.axisZ, box2.axisX), box1,
-                         box2) ||
-      GetSeparatingPlane(rPos, glm::cross(box1.axisZ, box2.axisY), box1,
-                         box2) ||
-      GetSeparatingPlane(rPos, glm::cross(box1.axisZ, box2.axisZ), box1, box2));
-}
-
-// Min function, but seeing which is larger is based on the absolute value
-static float AbsMin(float a, float b) {
-  return glm::abs(a) > glm::abs(b) ? b : a;
-}
-
-// Assumes camera is colliding with block
-static void BounceOn(const Level::Block &block, GrapplingCamera &camera) {
-  glm::vec3 min = {AbsMin(block.Start.x - camera.PhysicsPosition.x,
-                          block.End.x - camera.PhysicsPosition.x),
-                   AbsMin(block.Start.y - camera.PhysicsPosition.y,
-                          block.End.y - camera.PhysicsPosition.y),
-                   AbsMin(block.Start.z - camera.PhysicsPosition.z,
-                          block.End.z - camera.PhysicsPosition.z)};
-
-  if (glm::abs(min.x) > glm::abs(min.y)) {
-    if (glm::abs(min.z) > glm::abs(min.y)) {
-      camera.PhysicsPosition.y += min.y;
-      camera.Vel.y = glm::max(camera.Vel.y, 0.0f);
-      camera.m_CanJump = true;
-    } else {
-      camera.PhysicsPosition.z += min.z;
-      camera.Vel.z = glm::max(camera.Vel.z, 0.0f);
-    }
-  } else {
-    if (glm::abs(min.z) > glm::abs(min.x)) {
-      camera.PhysicsPosition.x += min.x;
-      camera.Vel.x = glm::max(camera.Vel.x, 0.0f);
-    } else {
-      camera.PhysicsPosition.z += min.z;
-      camera.Vel.z = glm::max(camera.Vel.z, 0.0f);
-    }
-  }
-
-  camera.Position = {camera.PhysicsPosition.x,
-                     camera.PhysicsPosition.y + PHYSICSOFFSET,
-                     camera.PhysicsPosition.z};
 }
 
 float Level::SDF(const glm::vec3 &samplePoint) {
@@ -392,9 +299,8 @@ float Level::SDF(const glm::vec3 &samplePoint) {
   for (size_t i = 1; i < m_Blocks.size() - 1; i++) {
     const auto &block = m_Blocks[i];
     glm::vec3 copy = samplePoint;
-    glm::vec3 blockSize = block.End - block.Start;
-    glm::vec3 blockCenter = (block.Start + block.End) * 0.5f;
-    copy -= blockCenter;
+    glm::vec3 blockSize = 2.0f * block.Halfsize;
+    copy -= block.Center;
     copy = glm::conjugate(block.Rotation) * copy;
     glm::vec3 q = glm::abs(copy) - blockSize;
     distance = glm::min(length(glm::max(q, glm::vec3(0.0))) +
